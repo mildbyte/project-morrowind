@@ -57,9 +57,7 @@ class Location():
             x, y = self.coords[0], self.coords[1]
             cell_loc = "[%d,%d]" % (int(x/8192), int(y/8192))
             self.cell_id = exterior_coord_map[cell_loc]
-            
-
-        self.cell = cell_id_map[self.cell_id]
+        self.cell = cell_id_map.get(self.cell_id, Cell)
     
     # Some deduplication to make sure we don't look at the same point several
     # times (e.g. for pathfinding)
@@ -198,6 +196,11 @@ class Cell():
         for td in to_delete:
             self.destinations.remove(td)
 
+            # Also have to delete the actual door in the cell that led us to the bad destination
+            # (FIXME sad denormalisation here and horrible n^2)
+            for r in [r for r in self.references if hasattr(r, 'destination') and r.destination == td]:
+                self.references.remove(r)
+
 
 def tokenize(raw):
     tokens = []
@@ -245,13 +248,13 @@ def read_cells_npcs(path):
 
 
 def load_cells_npcs(path):
-    print "Reading the file..."
+    print("Reading the file...")
     cells, npcs = read_cells_npcs(path)
     
-    print "Parsing the cells..."
+    print("Parsing the cells...")
     cells = parse_cells(tokenize(cells))
     
-    print "Parsing the NPCs..."
+    print("Parsing the NPCs...")
     npcs = parse_npcs(tokenize(npcs))
     
     # Map the text cell IDs to actual data structures and link cells together
@@ -259,11 +262,11 @@ def load_cells_npcs(path):
     exterior_coord_map = {n.split()[-1]: n for n in exterior_names}
     cell_id_map = {c.get_full_name(): c for c in cells}
     
-    print "Finalizing the cell references..."
+    print("Finalizing the cell references...")
     for c in cells:
         c.finalize_references(exterior_coord_map, cell_id_map)
     
-    print "Finalizing the NPC references..."
+    print("Finalizing the NPC references...")
     for n in npcs:
         n.finalize_references(exterior_coord_map, cell_id_map)
         

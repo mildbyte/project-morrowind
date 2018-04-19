@@ -1,0 +1,10 @@
+name: project-morrowind
+dependencies:
+- python=2.7
+- pytest
+- PyYAML
+- matplotlib
+- numpy
+- scipy
+- pip:
+  - pydot

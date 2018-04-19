@@ -1,0 +1,654 @@
+# Coalesced Ajira questline with getting the BOBS in between + soul gems
+mg_ajira_1:
+  giver: ajira
+# Edwinna's quests up until Nchuleftingth expedition, all done in one go (Dwemer tube stolen
+# from Vorar Helas in Balmora, then Chimarvamidium, Skink and Huleen)
+mg_edwinna_1:  # also gives Almsivi/Divine amulets
+  giver: edwinna elbert
+  prerequisites:
+    - mg_ajira_1
+mg_edwinna_2:
+  giver: edwinna elbert
+  prerequisites:
+    - mg_edwinna_1
+    - mg_edwinna_nchuleftingth
+    - mg_edwinna_scarab_plans
+    - mg_edwinna_airship_plans
+mg_edwinna_nchuleftingth:
+  giver: anes vendu
+mg_edwinna_scarab_plans:
+  giver: Khargol gro-Boguk # orc in Vacant Tower with the other copy of the plans
+mg_edwinna_airship_plans:
+  giver: lugrub gro-ogdum # orc near Bethamez that is a part of the IL quest
+mg_master:
+  giver: trebonius artorius
+  prerequisites:
+    - mg_edwinna_2
+    - mg_training
+mg_training:
+  giver: edwinna elbert
+# todo figure out how training would work
+
+fg_eydis_1_start: # join FG and start first quest
+  giver: eydis fire-eye
+fg_eydis_1_do:
+  giver: drarayne thelas
+  prerequisites:
+    - fg_eydis_1_start
+fg_eydis_1_end:
+  giver: eydis fire-eye
+  prerequisites:
+    - fg_eydis_1_do
+# Kill egg poachers in Shulk and the Telvanni near Caldera
+fg_kill_egg_poachers:
+  giver: Sevilo Othan
+fg_kill_telvanni_spies:
+  giver: Alynu Aralen
+fg_eydis_3_get:
+  giver: eydis fire-eye
+  prerequisites:
+    - fg_eydis_1_end
+    - fg_kill_egg_poachers
+    - fg_kill_telvanni_spies
+fg_eydis_3_do_and_join_tg:
+  giver: sottilde
+  prerequisites:
+    - fg_eydis_3_get
+fg_eydis_3_end_4_get:
+  giver: eydis fire-eye
+  prerequisites:
+    - fg_eydis_3_do_and_join_tg
+fg_eydis_4_do:
+  giver: helviane desele
+  prerequisites:
+    - fg_eydis_3_end_4_get
+# final quests requiring Protector (apart from Dura but doesn't matter)
+fg_eydis_5:
+  giver: eydis fire-eye
+  prerequisites:
+    - fg_lorbumol_1_end_2_get
+    - fg_eydis_4_do
+    - fg_kill_dura
+    - fg_kill_burub
+    - fg_kill_verethi
+    - fg_kill_hunger
+fg_kill_dura:
+  giver: dura gra-bol
+fg_kill_burub:
+  giver: burub gra-bamog
+fg_kill_verethi:
+  giver: dovres verethi
+fg_kill_hunger:
+  giver: hunger_fghl
+# Lorbumol's first two quests
+fg_lorbumol_1_get:
+  giver: lorbumol gro-aglakh
+fg_lorbumol_1_do:
+  giver: nar gro-shagramph
+  prerequisites:
+    - fg_lorbumol_1_get
+fg_lorbumol_1_end_2_get:
+  giver: lorbumol gro-aglakh
+  prerequisites:
+    - fg_lorbumol_1_do
+fg_lorbumol_2_do:
+  giver: tongue_toad
+  prerequisites:
+    - fg_lorbumol_1_end_2_get
+fg_lorbumol_2_end:
+  giver: lorbumol gro-aglakh
+  prerequisites:
+    - fg_lorbumol_2_do
+# Final questline
+fg_persius_1_get:
+  giver: persius mercius
+  prerequisites:
+    - fg_eydis_5
+    - fg_lorbumol_2_end
+fg_persius_1_do:
+  giver: ulyne henim
+  prerequisites:
+    - fg_persius_1_get
+    - fg_kill_necro
+fg_kill_necro:
+  giver: daris adram  # can pre-kill but have to report to Ulyne near Vas after getting the quest anyway
+fg_kill_beneran:
+  giver: nerer beneran
+fg_persius_3_get:
+  giver: persius mercius
+  prerequisites:
+    - fg_persius_1_do
+    - fg_kill_beneran
+fg_persius_3_avon:
+  giver: avon oran
+  prerequisites:
+    - fg_persius_3_get
+fg_clear_saturan:
+  giver: jolgeir # the furthest from the entrance but need to kill 7 bandits
+fg_persius_3_end:
+  giver: avon oran
+  prerequisites:
+    - fg_clear_saturan
+    - fg_persius_3_avon
+fg_persius_4_get:
+  giver: persius mercius
+  prerequisites:
+    - fg_persius_3_end
+fg_persius_4_do:
+  giver: dangor
+  prerequisites:
+    - fg_persius_4_get
+fg_kill_lorbumol_and_sjoring:
+  giver: sjoring hard-heart
+  prerequisites:
+    - fg_lorbumol_2_end # can't kill before finishing his required quests
+fg_master:
+  giver: persius mercius
+  prerequisites:
+    # need to make sure we've done the bitter cup quest so we don't need to kill Eydis
+    # can prekill lorbumol and sjoring (Taunt)
+    - fg_persius_4_do
+    - tg_jim_3_end # secure Eydis' support
+    - fg_kill_lorbumol_and_sjoring
+
+# Thieves' guild up to Bragor freeing
+tg_habasi_1:
+  giver: habasi
+  prerequisites:
+    - fg_eydis_3_do_and_join_tg
+    - tg_razhid_artifacts # most action is in balmora -- this one requires to travel to hla oad so separate
+tg_razhid_artifacts:
+  giver: ra'zhid
+tg_habasi_2_get:
+  giver: habasi
+  prerequisites:
+    - tg_habasi_1
+tg_habasi_2_do: # buy Coherer in Pelagiad and blackmail the Orc
+  giver: shadbak gra-burbug
+  prerequisites:
+    - tg_habasi_2_get
+tg_habasi_2_end_3_do: # get quest, talk to the High Elf on the same side of the river and get him to protect TG
+  giver: habasi
+  prerequisites:
+    - tg_habasi_2_do
+# Aengoth's thieves guild questline
+tg_aengoth_1_get:
+  giver: aengoth
+  prerequisites:
+    - fg_eydis_3_do_and_join_tg
+tg_aengoth_1_mg_loot: # get tanto and Withershins
+  giver: edwinna elbert # not really but same location
+  prerequisites:
+    - tg_aengoth_1_get
+tg_aengoth_2_redoran_loot: # go through Ald Skar and get the Master Helm, Boethiah's Pillow Book, Recipe Book, Darts and buy Dwemer Scrap Metal
+  giver: neminda # inside Redoran Council, action takes place in the 2 nearby manors
+tg_aengoth_2:
+  giver: aengoth
+  prerequisites:
+    - tg_aengoth_1_mg_loot
+    - tg_aengoth_2_redoran_loot
+tg_helende_1:
+  giver: big helende
+  prerequisites:
+    - fg_eydis_3_do_and_join_tg
+    - tg_helende_retort
+    - tg_helende_recipes
+tg_helende_2:
+  giver: big helende
+  prerequisites:
+    - tg_helende_guard
+tg_helende_retort:
+  giver: berwen
+tg_helende_recipes:
+  giver: anis seloth
+tg_helende_guard:
+  giver: arielle phiencel
+  prerequisites:
+    - il_darius_2_do # Ebony in the same room where the Orc is held
+    - tg_helende_1
+tg_jim_1:
+  giver: stacey
+  prerequisites:
+    - tg_helende_2
+    - tg_aengoth_2
+    - tg_habasi_2_end_3_do
+    - misc_olms_delyn # clear out the two shrines and get key from Nads' body
+misc_olms_delyn:
+  giver: durus marius
+tg_jim_2_get:
+  giver: stacey
+  prerequisites:
+    - tg_jim_1
+tg_jim_2_do:
+  giver: persius mercius
+  prerequisites:
+    - tg_jim_2_get
+tg_jim_2_end_3_get:
+  giver: stacey
+  prerequisites:
+    - tg_jim_2_do
+tg_jim_3_do:
+  giver: eydis fire-eye
+  prerequisites:
+    - tg_bittercup
+    - tg_jim_2_end_3_get
+tg_bittercup: # get Bitter Cup from Ald Redaynia
+  giver: skeleton_aldredaynia
+tg_jim_3_end:
+  giver: stacey
+  prerequisites:
+    - tg_jim_3_do
+tg_master:
+  giver: stacey
+  prerequisites:
+    - fg_master
+
+tt_join:
+  giver: feldrelo sadri
+tt_7graces_vivec:
+  giver: vivec_god # roughly the location for the 3 shrines
+  prerequisites:
+    - tt_join
+tt_7graces_gnisis:
+  giver: punibi yahaz # roughly between the Ash Mask location and the Koal Cave
+  prerequisites:
+    - tt_join
+tt_7graces_kummu:
+  giver: alof the easterner # closest NPC to the shrine, Muck collected SW
+  prerequisites:
+    - tt_join
+tt_7graces_gg:
+  giver: uvoo llaren # inside GG but the actual shrine is north
+  prerequisites:
+    - tt_join
+tt_cure_orc:
+  giver: bulfim_gra_shugarz
+  prerequisites:
+    - tt_7graces_gnisis # not required but gives Vivec's Touch spell
+tt_tuls_1_get:
+  giver: tuls valen
+  prerequisites:
+    - tt_7graces_vivec
+    - tt_7graces_gnisis
+    - tt_7graces_kummu
+    - tt_7graces_gg
+    - tt_cure_orc
+tt_tuls_1_do:
+  giver: elvil vidron
+  prerequisites:
+    - tt_tuls_1_get
+tt_tuls_1_end_2_get:
+  giver: tuls valen
+  prerequisites:
+    - tt_tuls_1_do
+tt_tuls_2_do:
+  giver: dremora_ttmg
+  prerequisites:
+    - tt_tuls_1_end_2_get
+tt_tuls_2_end:
+  giver: tuls valen
+  prerequisites:
+    - tt_tuls_2_do
+tt_endryn_1_get:
+  giver: endryn llethan
+  prerequisites:
+    - tt_7graces_vivec
+    - tt_7graces_gnisis
+    - tt_7graces_kummu
+    - tt_7graces_gg
+tt_endryn_1_do:
+  giver: tanusea veloth
+  prerequisites:
+    - tt_endryn_1_get
+tt_set_sanctus_mark:
+  giver: llirala sendas
+tt_endryn_1_end:
+  giver: endryn llethan
+  prerequisites:
+    - tt_endryn_1_do
+    - tt_set_sanctus_mark
+    - tt_clear_ald_sotha
+    - misc_olms_delyn
+tt_clear_ald_sotha: # Kill Severa Magia and Llandrale Varam (future MT quest), get Sanguine items and Shoes of Rilms
+  giver: llandrale varam
+tt_tharer_1:
+  giver: tharer rotheloth
+  prerequisites:
+    - tt_7graces_vivec
+    - tt_7graces_gnisis
+    - tt_7graces_kummu
+    - tt_7graces_gg
+    - tt_cure_lette
+    - tt_mount_kand
+    - tt_mawia
+    - tt_kill_raxle_berne
+tt_cure_lette:
+  giver: lette
+  prerequisites:
+    - tt_7graces_gnisis # again a handy cure spell
+tt_mount_kand:
+  giver: atronach_storm_ttmk
+tt_mawia:
+  giver: delvam andarys
+tt_kill_raxle_berne:
+  giver: raxle berne
+tt_saryoni_fourcorners_1: # Four Corners pilgrimage. Can be done outside of the Temple questline
+  giver: tholer saryoni
+tt_saryoni_fourcorners_1_do: # need 4 daedra hearts -- Nalcarya?
+  giver: active_dae_malacath_df
+  prerequisites:
+    - tt_saryoni_fourcorners_1
+tt_saryoni_fourcorners_2:
+  giver: tholer saryoni
+  prerequisites:
+    - tt_saryoni_fourcorners_1_do
+tt_saryoni_fourcorners_2_do:
+  giver: active_dae_mehrunes_as # Mehrunes statue next to her
+  prerequisites:
+    - tt_saryoni_fourcorners_2
+tt_saryoni_fourcorners_3:
+  giver: tholer saryoni
+  prerequisites:
+    - tt_saryoni_fourcorners_2_do
+tt_saryoni_fourcorners_3_do:
+  giver: active_dae_molagbal2
+  prerequisites:
+    - tt_saryoni_fourcorners_3
+tt_saryoni_fourcorners_4:
+  giver: tholer saryoni
+  prerequisites:
+    - tt_saryoni_fourcorners_3_do
+tt_saryoni_fourcorners_4_do:
+  giver: active_dae_sheogorath_ad
+  prerequisites:
+    - tt_saryoni_fourcorners_4
+tt_assarnibibi:
+  giver: ac_shrine_assarnibibi
+  prerequisites:
+    - tt_saryoni_fourcorners_4_do
+tt_master:
+  giver: tholer saryoni
+  prerequisites:
+    - tt_tharer_1
+    - tt_endryn_1_end
+    - tt_tuls_2_end
+    - tt_assarnibibi
+    - il_madura_seran
+
+mt_kill_feruren_oran:
+  giver: feruren oran
+mt_pelagiad_belt:
+  giver: hrordis # taunt and kill
+mt_movis_darys: # taunt and kill
+  giver: movis darys
+mt_ashalmimilkala: # kill Carecalmo and Meryaran, get Scroll for later IC quest
+  giver: meryaran
+mt_yasammidan:
+  giver: anel rethelas # + kill Mindeli Saren for a total of 2 Sanguine items
+mt_join_and_advance: # join MT and keep handing in quests until Miun Gei
+  giver: eno hlaalu
+  prerequisites:
+    - mt_kill_feruren_oran
+    - tt_clear_ald_sotha # Severa Magia + 6 Sanguine items for 30 rep
+    - misc_olms_delyn # Durus Marius + 4 Sanguine items for 20 rep
+    - mt_pelagiad_belt # 1 Sanguine item
+    - mt_movis_darys # 1 Sanguine item
+    - mt_ashalmimilkala # 1 Sanguine item
+    - mt_yasammidan # 2 Sanguine items
+    # by this point 15 Sanguine items yield 75 rep, further quests give 30 more (up to Severa Magia)
+mt_eno_1:
+  giver: tsrazami
+  prerequisites:
+    - mt_join_and_advance
+mt_master:
+  giver: eno hlaalu
+  prerequisites:
+    - mt_eno_1
+
+ic_acquire_shirt:
+  giver: falanaamo
+ic_acquire_brandy:
+  giver: banor seran
+ic_boots:
+  giver: Ama Nin_DisguiseMara
+ic_ring:
+  giver: galmis dren
+ic_iulus:
+  giver: iulus truptor # need about 2200 gold to get 50 IC rep
+  prerequisites:
+    - ic_acquire_shirt
+    - ic_acquire_brandy
+ic_skullcrusher:
+  giver: com_chest_Daed_crusher
+ic_lalatia_1: # hand in first 2 quests, get Ice Blade since we can't get rep otherwise
+  giver: Lalatia Varian
+  prerequisites:
+    - ic_ring
+    - ic_boots
+    - ic_iulus
+ic_adusamsi:
+  giver: adusamsi assurnarairan
+  prerequisites:
+    - ic_lalatia_1
+ic_master: # Hand in the Ice Blade and other Oracle artifacts
+  giver: Lalatia Varian
+  prerequisites:
+    - ic_adusamsi
+    - mt_ashalmimilkala
+    - ic_skullcrusher
+    - ic_iulus
+
+il_darius_1: # Gnisis, first Darius quests (murder + eggmine cure, have to return to the eggmine twice + get plans from Bethamez)
+  giver: general darius
+  prerequisites:
+    - tt_7graces_gnisis # get the spell to cure the Queen
+il_madura_seran:
+  giver: madura seran
+il_darius_2_get:
+  giver: general darius
+  prerequisites:
+    - il_darius_1
+    - il_madura_seran
+il_darius_2_do:
+  giver: ragash gra-shuzgub
+  prerequisites:
+    - il_darius_2_get
+il_darius_2_end: # rescue taxman and destroy the Talos Cult
+  giver: general darius
+  prerequisites:
+    - il_darius_2_do
+il_drinar_tube:
+  giver: drinar varyon
+il_joncis_dalomax:
+  giver: joncis dalomax
+il_kill_varona_nelas:
+  giver: varona nelas
+il_imsin_1: # prerescue Joncis but don't report until finishing Dwemer Tube; kill Varona Nelas (no reward but still get rep)
+  giver: imsin the dreamer
+  prerequisites:
+    - il_drinar_tube
+    - il_joncis_dalomax
+    - il_kill_varona_nelas
+il_radd_1_get: # need to have the Dwemer metal which we got either in Ald-Ruhn or from Nalcarya. Get Jocien rescue quest
+  giver: radd hard-heart
+il_radd_1_do:
+  giver: jocien ancois
+  prerequisites:
+    - il_radd_1_get
+il_dandsa_netch:
+  giver: Dandsa # presumably we kill her and the two breeding netch nearby
+il_sorkvild:
+  giver: sorkvild the raven
+il_radd_2:
+  giver: radd hard-heart
+  prerequisites:
+    - il_radd_1_do
+    - il_dandsa_netch
+    - il_sorkvild
+il_frald_1_get:
+  giver: Frald the White
+il_frald_1_do:
+  giver: salyn sarethi
+  prerequisites:
+    - il_frald_1_get
+il_frald_1_end:
+  giver: Frald the White
+  prerequisites:
+    - il_frald_1_do
+il_lord_mail:
+  giver: Furius Acilius
+il_chrysamere:
+  giver: draramu hloran
+il_varus_1:
+  giver: Varus Vatinius
+  prerequisites:
+    - il_darius_2_end
+    - il_imsin_1
+    - il_radd_2
+    - il_frald_1_end
+    - il_lord_mail
+    - il_chrysamere
+
+hh_nileno_1_get:
+  giver: nileno dorvayn
+hh_nileno_1_do:
+  giver: neminda
+  prerequisites:
+    - hh_nileno_1_get
+hh_nileno_2_get:
+  giver: nileno dorvayn
+  prerequisites:
+   - hh_nileno_1_do
+hh_nileno_2_do:
+  giver: aurane frernis
+  prerequisites:
+    - hh_nileno_2_get
+hh_nileno_3_get:
+  giver: nileno dorvayn
+  prerequisites:
+    - hh_nileno_2_do
+hh_nileno_3_do:
+  giver: avon oran
+  prerequisites:
+    - hh_nileno_3_get
+hh_nileno_3_do_kill:
+  giver: umbra # near the mine
+  prerequisites:
+    - hh_nileno_3_do
+hh_nileno_4_get:
+  giver: nileno dorvayn
+  prerequisites:
+    - hh_nileno_3_do_kill
+hh_nileno_4_do:
+  giver: rolasa oren
+  prerequisites:
+    - hh_nileno_4_get
+hh_nileno_5_get:
+  giver: nileno dorvayn
+  prerequisites:
+    - hh_nileno_4_do
+hh_nileno_5_do:
+  giver: bivale teneran
+  prerequisites:
+    - hh_nileno_5_get
+hh_nileno_6_get:
+  giver: nileno dorvayn
+  prerequisites:
+    - hh_nileno_5_do
+hh_nileno_6_do:
+  giver: thanelen velas
+  prerequisites:
+    - hh_nileno_6_get
+hh_nileno_6_end:
+  giver: nileno dorvayn
+  prerequisites:
+    - hh_nileno_6_do
+hh_crassius_1:
+  giver: crassius curio
+  prerequisites:
+    - hh_nileno_4_get # become Lawman after finishing Inanius
+hh_helvi_1_get:
+  giver: odral helvi
+  prerequisites:
+    - hh_crassius_1
+hh_helvi_1_do:
+  giver: crassius curio
+  prerequisites:
+    - hh_helvi_1_get
+hh_helvi_2_get:
+  giver: odral helvi # get contracts from Elmussa in town here, get Erroneous Documents
+  prerequisites:
+    - hh_helvi_1_do
+hh_helvi_2_do:
+  giver: crassius curio # also go to Baren Alen here
+  prerequisites:
+    - hh_helvi_2_get
+hh_helvi_3_get: # hand in quest, pay rent and taxes
+  giver: odral helvi
+  prerequisites:
+    - hh_helvi_2_do
+hh_helvi_3_do:
+  giver: crassius curio
+  prerequisites:
+    - hh_helvi_3_get
+hh_helvi_3_do_report:
+  giver: segunivus mantedius
+  prerequisites:
+    - hh_helvi_3_do
+
+hh_stronghold_deed:
+  giver: baren alen
+hh_stronghold_1_get:
+  giver: dondos driler
+  prerequisites:
+    - hh_nileno_6_get # about enough rep for Kinsman -- assuming we haven't yet done the FG quest that gives us +5 rep?
+hh_stronghold_1_do:
+  giver: vedam dren
+  prerequisites:
+    - hh_stronghold_1_get
+hh_stronghold_2_get: # start construction and wait here
+  giver: dondos driler
+  prerequisites:
+    - hh_stronghold_1_do
+    - hh_stronghold_deed
+hh_stronghold_2_do:
+  giver: durbul gro-rush
+  prerequisites:
+    - hh_stronghold_2_get
+
+hh_crassius_2: # get Advancement to House Father
+  giver: crassius curio
+  prerequisites:
+    - hh_helvi_3_do_report
+    - hh_stronghold_2_do
+    - hh_nileno_6_end
+
+hh_vedam_1_get:
+  giver: vedam dren
+  prerequisites:
+    - hh_crassius_2
+hh_vedam_1_do:
+  giver: tholer saryoni
+  prerequisites:
+    - hh_roris
+    - hh_vedam_1_get
+hh_roris:
+  giver: dagoth_hlevul # get Robe from nearby
+hh_orvas:
+  giver: Orvas Dren Druglord
+hh_master:
+  giver: vedam dren
+  prerequisites:
+    - hh_vedam_1_do
+    - hh_orvas
+ALL:
+  - mg_master
+  - fg_master
+  - tg_master
+  - tt_master
+  - mt_master
+  - ic_master
+  - hh_master
+START: # start with these two as they give us the teleportation amulets + money
+  - mg_ajira_1
+  - mg_edwinna_1
