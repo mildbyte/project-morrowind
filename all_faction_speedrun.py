@@ -57,7 +57,7 @@ pprint(test)
 # Load stuff from the Enchanted Editor dump
 cells, npcs = load_cells_npcs("../Morrowind.esm.txt")
 
-# We've 109 activators/NPCs that serve as nodes in the game -- find out their physical locations
+
 all_node_ids = set([i['giver'].lower() for i in graph.values()])
 all_node_locations = {n.name.lower(): Location(n.position, cell=c) for c in cells for n in c.references if n.name.lower() in all_node_ids}
 
@@ -70,18 +70,17 @@ vertices, edges = construct_graph(npcs, cells, extra_locations=all_node_location
 
 pruned_vertices, pruned_edges = prune_graph(vertices, edges, all_node_locations.values())
 pruned_vertices, pruned_edges = coalesce_interiors(pruned_vertices, pruned_edges)
-#
-# distprev = {}
-# for i, n in enumerate(all_node_ids):
-#     distprev[n] = dijkstra(pruned_vertices, pruned_edges, all_node_locations[n])
-#     print("%f%%" % (i / float(len(all_node_ids)) * 100))
+
+distprev = {}
+for i, n in enumerate(all_node_ids):
+    distprev[n] = dijkstra(pruned_vertices, pruned_edges, all_node_locations[n])
+    print("%f%%" % (i / float(len(all_node_ids)) * 100))
 
 import cPickle
 with open("speedrun_dijkstra_dump.bin", 'rb') as f:
     distprev = cPickle.load(f)
-# import pickle
-# with open("speedrun_dijkstra_dump.bin", 'wb') as f:
-#     pickle.dump(distprev, f)
+with open("speedrun_dijkstra_dump.bin", 'wb') as f:
+    cPickle.dump(distprev, f)
 
 
 # get the corresponding vertices in the graph for each node
@@ -137,9 +136,9 @@ def mutate_route(route, start, mutations=1):
             if successful_mutations == mutations:
                 return new_route
 
-POOL_SIZE = 20000
+POOL_SIZE = 10000
 ITERATIONS = 1000
-BRANCHING = 20
+BRANCHING = 40
 MUTATIONS = 30
 
 pool = [mutate_route(test, start, MUTATIONS) for _ in xrange(POOL_SIZE)]
@@ -153,28 +152,8 @@ for i in range(ITERATIONS):
 
 best = min(pool, key=evaluate_route)
 
-new_pool = []
-for p in pool:
-    ll = p.index('ic_lalatia_1')
-    iu = p.index('ic_iulus')
-
-    sh = p.index('ic_acquire_shirt')
-    br = p.index('ic_acquire_brandy')
 
 
-    if iu > ll:
-        new_pool.append(move(move(move(p, iu, ll-iu), sh, ll-iu), br, ll-iu))
-    else:
-        new_pool.append(p)
-
-
-for p in pool:
-    p.remove('mg_ajira_1')
-    p.remove('mg_edwinna_1')
-    p.insert(0, 'mg_edwinna_1')
-    p.insert(0, 'mg_ajira_1')
-
-pool2 = pool
 with open("speedrun_route_pool.bin", 'rb') as f:
     pool = cPickle.load(f)
 with open("speedrun_route_pool.bin", 'wb') as f:
@@ -187,9 +166,3 @@ G = pydot.graph_from_edges(edge_list=edges, directed=True)
 
 with open("quest_graph.png", 'wb') as f:
     f.write(G.create_png(prog=['sfdp', '-Goverlap=false', '-Gsplines=true']))
-
-
-# tomorrow:
-# * actually write down the required skills (final rank) for each guild and see which skills we need to train (+ possible alchemy/enchantment as first-choice skill)
-# * experiment with mark/recall placement in the GA solver
-# * experiment with draining skills before training them

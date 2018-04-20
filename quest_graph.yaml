@@ -1,4 +1,64 @@
-# Coalesced Ajira questline with getting the BOBS in between + soul gems
+# Training
+# Starting character (https://morrowind.jpbetley.com/?sex=female&race=nord&birthsign=Steed&specialization=magic&favored=strength&favored=agility&major=mysticism&major=blunt-weapon&major=marksman&major=alchemy&major=enchant&minor=long-blade&minor=sneak&minor=block&minor=speechcraft&minor=light-armor)
+# Nord, Female, Magic spec, favored attributes Strength and Agility
+# Major skills: Mysticism (35), Blunt Weapon (40), Marksman (30), Alchemy (35), Enchant (35)
+# Minor skills: Long Blade (20), Sneak (15), Block (15), Mercantile (15), Light Armor (15)
+
+# Attributes:
+# Strength: 60 (required 90 for Blunt training)
+# Intelligence: 30 (required 35, will be achieved with Alchemy levelups)
+# Willpower: 50 (more than required)
+# Agility: 40 (same)
+# Speed: 65 (same)
+# Endurance: 40 (same)
+# Personality: 30 (need 35, will achieve with 10 Speechcraft training that's needed anyway)
+
+# Skill progression:
+# Alchemy: 35 -> 70 (manual training, main for MG, secondary for TT)
+# Enchant: at 35 (secondary for MG and IC)
+# Mysticism: at 35 (secondary for MG, TT and IC)
+# Long Blade: 20 -> 40 (secondary for FG and IL, used to get extra 10 Strength for Blunt training)
+# Blunt: 40 -> 90 (main for FG, TT, IC, IL, using the master trainer in St Olms + initial training by Eydis)
+# Block: 15 -> 25 (secondary for FG and IL + gets 5 extra Agi points)
+# Marksman: 30 -> 80 (main for TG, MT, HH, Missun Akin in Falasmaryon)
+# Light Armor: 15 -> 30 (secondary for TG, MT and HH, extra Agi points)
+# Sneak: 15 -> 30 (secondary for TG and MT -- extra 15 AGI points to help with Marksman training counting Light Armor)
+# Mercantile: 15 -> 25 (secondary for HH, gives +5 Personality points to meet IC attribute requirements)
+
+# Training nodes
+training_alveleg:
+  # we're killing him as part of the FG quest and he trains Marksman (45), Sneak (42) and Block (38)
+  # train Block x10 (up to 25)
+  # train Sneak x15 (up to 30)
+  # train Marksman x15 (up to 45) -- should get Agi 60
+  giver: alveleg
+training_bolnor:
+  # Light Armor x15 (up to 30)
+  # Marksman x5 (up to 50) -- agility 70
+  giver: bolnor andrani
+  prerequisites:
+    - training_alveleg
+training_eydis:
+  # Long Blade x20 (up to 40) -- strength 70
+  # Blunt x30 (up to 70) -- strength 85
+  giver: eydis fire-eye
+training_ernse:
+  # Blunt x20 (up to 90) -- strength 95
+  giver: ernse llervu
+  prerequisites:
+    - training_eydis
+training_missun:
+  # Marksman x30 (up to 80) -- agility 85
+  giver: missun akin
+  prerequisites:
+    - training_bolnor
+training_falvel:
+  # Mercantile x10 (up to 25) -- personality 35
+  giver: falvel arenim
+
+
+
+# Coalesced Ajira questline with getting the BOBS in between + soul gems + alchemy training (35 points by making potions)
 mg_ajira_1:
   giver: ajira
 # Edwinna's quests up until Nchuleftingth expedition, all done in one go (Dwemer tube stolen
@@ -24,10 +84,6 @@ mg_master:
   giver: trebonius artorius
   prerequisites:
     - mg_edwinna_2
-    - mg_training
-mg_training:
-  giver: edwinna elbert
-# todo figure out how training would work
 
 fg_eydis_1_start: # join FG and start first quest
   giver: eydis fire-eye
@@ -105,6 +161,8 @@ fg_persius_1_get:
   prerequisites:
     - fg_eydis_5
     - fg_lorbumol_2_end
+    - training_eydis  # by this point should be about 70 Blunt, 25 Long Blade
+    - training_alveleg # ... and 25 Block
 fg_persius_1_do:
   giver: ulyne henim
   prerequisites:
@@ -213,6 +271,7 @@ tg_jim_1:
     - tg_aengoth_2
     - tg_habasi_2_end_3_do
     - misc_olms_delyn # clear out the two shrines and get key from Nads' body
+    - training_missun # should be Marksman 80, Light Armor 30, Sneak 30
 misc_olms_delyn:
   giver: durus marius
 tg_jim_2_get:
@@ -273,11 +332,11 @@ tt_tuls_1_get:
     - tt_7graces_kummu
     - tt_7graces_gg
     - tt_cure_orc
-tt_tuls_1_do:
+tt_tuls_1_do: # False Nerevarine
   giver: elvil vidron
   prerequisites:
     - tt_tuls_1_get
-tt_tuls_1_end_2_get:
+tt_tuls_1_end_2_get: # Maar Gan Pilgrimage
   giver: tuls valen
   prerequisites:
     - tt_tuls_1_do
@@ -309,6 +368,7 @@ tt_endryn_1_end:
     - tt_set_sanctus_mark
     - tt_clear_ald_sotha
     - misc_olms_delyn
+    - training_eydis # need Curate (50 blunt) to hand in Rilms/Cult cleanup
 tt_clear_ald_sotha: # Kill Severa Magia and Llandrale Varam (future MT quest), get Sanguine items and Shoes of Rilms
   giver: llandrale varam
 tt_tharer_1:
@@ -322,6 +382,7 @@ tt_tharer_1:
     - tt_mount_kand
     - tt_mawia
     - tt_kill_raxle_berne
+    - training_eydis # Curate (50 blunt) to hand in Galom Daeus quest
 tt_cure_lette:
   giver: lette
   prerequisites:
@@ -374,6 +435,7 @@ tt_master:
     - tt_tuls_2_end
     - tt_assarnibibi
     - il_madura_seran
+    - training_ernse
 
 mt_kill_feruren_oran:
   giver: feruren oran
@@ -404,6 +466,7 @@ mt_master:
   giver: eno hlaalu
   prerequisites:
     - mt_eno_1
+    - training_missun # need to have 80 Marksman etc since we're becoming Grandmaster here
 
 ic_acquire_shirt:
   giver: falanaamo
@@ -437,6 +500,7 @@ ic_master: # Hand in the Ice Blade and other Oracle artifacts
     - mt_ashalmimilkala
     - ic_skullcrusher
     - ic_iulus
+    - training_ernse # Blunt 90 by this point to become Primate
 
 il_darius_1: # Gnisis, first Darius quests (murder + eggmine cure, have to return to the eggmine twice + get plans from Bethamez)
   giver: general darius
@@ -499,7 +563,7 @@ il_lord_mail:
   giver: Furius Acilius
 il_chrysamere:
   giver: draramu hloran
-il_varus_1:
+il_master:
   giver: Varus Vatinius
   prerequisites:
     - il_darius_2_end
@@ -508,6 +572,7 @@ il_varus_1:
     - il_frald_1_end
     - il_lord_mail
     - il_chrysamere
+    - training_eydis # Blunt 70 to challenge for a duel
 
 hh_nileno_1_get:
   giver: nileno dorvayn
@@ -532,7 +597,7 @@ hh_nileno_3_do:
   prerequisites:
     - hh_nileno_3_get
 hh_nileno_3_do_kill:
-  giver: umbra # near the mine
+  giver: Kwama Queen_HHEM
   prerequisites:
     - hh_nileno_3_do
 hh_nileno_4_get:
@@ -622,6 +687,8 @@ hh_crassius_2: # get Advancement to House Father
     - hh_helvi_3_do_report
     - hh_stronghold_2_do
     - hh_nileno_6_end
+    - training_missun # 70 (or more) Marksman, 25 Light Armor
+    - training_falvel # 25 Personality
 
 hh_vedam_1_get:
   giver: vedam dren
@@ -649,6 +716,7 @@ ALL:
   - mt_master
   - ic_master
   - hh_master
+  - il_master
 START: # start with these two as they give us the teleportation amulets + money
   - mg_ajira_1
   - mg_edwinna_1
