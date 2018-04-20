@@ -1,3 +1,4 @@
+import csv
 from collections import defaultdict
 
 from yaml import load
@@ -12,7 +13,7 @@ def validate(graph):
         if 'giver' not in contents:
             raise ValueError("Node %s has no giver!" % node)
         for item in contents:
-            if item not in ['giver', 'prerequisites']:
+            if item not in ['giver', 'prerequisites', 'description']:
                 raise ValueError("Node %s has unknown item %s!" % (node, item))
         for p in contents.get('prerequisites', []):
             if p not in graph:
@@ -151,6 +152,41 @@ for i in range(ITERATIONS):
 
 
 best = min(pool, key=evaluate_route)
+
+
+def print_route(route):
+    for node1, node2 in zip(route, route[1:]):
+        graph_node = graph[node1]
+        print(graph_node.get('giver'))
+        print(graph_node.get('description', node1))
+        print(node_routes[graph[node1]['giver'].lower()][graph[node2]['giver'].lower()])
+
+
+def export_route(route, fd):
+    writer = csv.writer(fd)
+    writer.writerow(['Route', 'Location', 'Description', 'Graph Node'])
+
+    for node1, node2 in zip(route, route[1:]):
+        # import pdb; pdb.set_trace()
+        graph_node = graph[node1]
+        subroute = node_routes[graph[node1]['giver'].lower()][graph[node2]['giver'].lower()]
+
+        writer.writerow([subroute[0].cell if subroute else '', graph_node.get('giver'), graph_node.get('description', node1), node1])
+
+        if len(subroute) > 1:
+            for r1, r2 in zip(subroute[1:], subroute[2:]):
+                try:
+                    method, _ = pruned_edges[r1][r2]
+                except:
+                    method = "Walk/Fly"
+
+                writer.writerow(['%s -> %s' % (method, r2.cell), '', ''])
+
+    graph_node = graph[route[-1]]
+    writer.writerow([subroute[-1].cell if subroute else '', graph_node.get('giver'), graph_node.get('description', node2), node2])
+
+with open("route.csv", 'wb') as f:
+    export_route(best, f)
 
 
 
