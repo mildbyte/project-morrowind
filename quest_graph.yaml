@@ -25,6 +25,17 @@
 # Sneak: 15 -> 30 (secondary for TG and MT -- extra 15 AGI points to help with Marksman training counting Light Armor)
 # Mercantile: 15 -> 25 (secondary for HH, gives +5 Personality points to meet IC attribute requirements)
 
+# Current issues:
+# Have to join IL at Darius and only then get quests
+# about 5k short at missun with the intended route (and getting however much we got from the scamp)
+# extra 15k needed to train blunt
+# 7987 remaining with all that (made money from TG quests
+# one writ had to be done for MT?
+# still need to do Hrundi despite being head of TG
+# diviner even before Raxle but not sure if will reach Master
+# forgot blunt 1 point (lol)
+# eydis not offering training until protector (2 lorbumol + all eydis before alof)
+
 # Training nodes
 training_alveleg:
   # we're killing him as part of the FG quest and he trains Marksman (45), Sneak (42) and Block (38)
