@@ -67,6 +67,20 @@ class Location():
     def __eq__(self, l):
         return self.coords == l.coords and self.cell_id == l.cell_id
 
+    def __ne__(self, l):
+        return self.coords != l.coords or self.cell_id != l.cell_id
+
+    def __cmp__(self, other):
+        if self.cell_id < other.cell_id:
+            return -1
+        if self.cell_id > other.cell_id:
+            return 1
+        if self.coords < other.coords:
+            return -1
+        if self.coords > other.coords:
+            return 1
+        return 0
+
 
 class NPC():
     def __init__(self, it):
@@ -156,6 +170,9 @@ class Cell():
                 return "%s, [%d,%d]" % (self.region_name, self.grid[0], self.grid[1])
             except AttributeError:
                 return "Wilderness, [%d,%d]" % (self.grid[0], self.grid[1])
+
+    def __hash__(self):
+        return hash(self.get_full_name())
                 
     def __init__(self, it):
         self.name = it.next()[1]

@@ -6,5 +6,7 @@ dependencies:
 - matplotlib
 - numpy
 - scipy
+- ipython
+- seaborn
 - pip:
   - pydot

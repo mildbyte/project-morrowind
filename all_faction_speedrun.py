@@ -11,6 +11,8 @@ import cPickle
 import seaborn as sns
 from matplotlib import pyplot as plt
 import numpy as np
+import random
+
 plt.style.use('seaborn')
 plt.style.use('seaborn-paper')
 
@@ -75,84 +77,47 @@ for n in all_node_ids:
         print("Failed to locate %s" % n)
 
 vertices, edges = construct_graph(npcs, cells, extra_locations=all_node_locations.values(), use_realtime_metrics=True)
-#
-# pruned_vertices, pruned_edges = prune_graph(vertices, edges, all_node_locations.values())
-# pruned_vertices, pruned_edges = coalesce_cells(pruned_vertices, pruned_edges)
+sorted_vertices = sorted(vertices)
+vertex_index = {v: i for i, v in enumerate(sorted_vertices)}
 
-def export_fw_data(vertices, edges, fd):
-    INFINITY = 1e50
+def export_fw_data(edges, fd):
+    INFINITY = 1e10
 
-    vertices_ordered = sorted(vertices)
-    for v1 in vertices_ordered:
-        for v2 in vertices_ordered:
+    for v1 in sorted_vertices:
+        for v2 in sorted_vertices:
             d = distance(v1, v2, edges)
             fd.write('%f ' % (d if d is not None else INFINITY))
         fd.write('\n')
 
-# with open("dist.txt", 'wb') as f:
-#     export_fw_data(vertices, edges, f)
 
-
-
-def floyd_warshall(vertices, edges):
-    INFINITY = 1e50
-    dist = {v1: {v2: INFINITY for v2 in vertices} for v1 in vertices}
-    prev = {v1: {v2: None for v2 in vertices} for v1 in vertices}
-
-    for v1 in vertices:
-        for v2 in vertices:
-            d = distance(v1, v2, edges)
-            dist[v1][v2] = d if d is not None else INFINITY
-            prev[v1][v2] = v2
-
-    for i, v1 in enumerate(vertices):
-        for v2 in vertices:
-            for v3 in vertices:
-                if dist[v2][v3] > dist[v2][v1] + dist[v1][v3]:
-                    dist[v2][v3] = dist[v2][v1] + dist[v1][v3]
-                    prev[v2][v3] = prev[v2][v1]
-        print("%d/%d" % (i, len(vertices)))
-
-    return dist, prev
+with open("dist.txt", 'wb') as f:
+    export_fw_data(edges, f)
 
 def floyd_warshall_path(v1, v2, prev):
-    if prev[v1][v2] is None:
+    i1, i2 = vertex_index[v1], vertex_index[v2]
+
+    if prev[i1, i2] is None:
         return []
-    result = [v1]
-    while not v1 == v2:
-        v1 = prev[v1][v2]
-        result.append(v1)
+    result = [sorted_vertices[i1]]
+    while i1 != i2:
+        i1 = prev[i1, i2]
+        result.append(sorted_vertices[i1])
     return result
 
-def load_vertex_data(sorted_vertices, fd):
-    data = {}
-    for v1, line in zip(sorted_vertices, fd.readlines()):
-        data[v1] = {v2: float(l) for v2, l in zip(sorted_vertices, line.split(' '))}
-    return data
+dist = np.loadtxt('dist_res.txt')
+prev = np.loadtxt('prev_res.txt', dtype=int)
 
+def floyd_warshall_distance(v1, v2, dist):
+    return dist[vertex_index[v1], vertex_index[v2]]
 
-dist = np.loadtxt()
-
-with open("dist_res.txt", 'rb') as f:
-    dist = load_vertex_data(sorted(vertices), f)
-
-with open("prev_res.txt", 'rb') as f:
-    prev = load_vertex_data(sorted(vertices), f)
-
-
-# get the corresponding vertices in the graph for each node
-node_to_vertex = {}
-for n in all_node_ids:
-    for v in pruned_vertices:
-        # after coalescing we're assuming there's one vertex per game cell
-        if all_node_locations[n].cell == v.cell:
-            node_to_vertex[n] = v
+floyd_warshall_distance(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], dist)
+floyd_warshall_path(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], prev)
 
 # create a matrix of node-to-node best distances
 node_distances = defaultdict(dict)
 for n1 in all_node_ids:
     for n2 in all_node_ids:
-        node_distances[n1][n2] = dist[all_node_locations[n1]][all_node_locations[n2]] if n1 != n2 else 0
+        node_distances[n1][n2] = floyd_warshall_distance(all_node_locations[n1], all_node_locations[n2], dist) if n1 != n2 else 0
 
 
 node_matrix = []
@@ -166,9 +131,39 @@ plt.setp(ax.ax_heatmap.xaxis.get_majorticklabels(), rotation=90)
 plt.savefig("travel_heatmap_cluster_new.png", dpi=200)
 
 
+def export_optimiser_dists(node_distances, graph, f):
+    all_nodes = sorted(graph.keys())
+    for n1 in all_nodes:
+        for n2 in all_nodes:
+            f.write(str(node_distances[graph[n1]['giver'].lower()][graph[n2]['giver'].lower()]) + ' ')
+        f.write('\n')
+
+def export_optimiser_constraints(graph, f):
+    all_nodes = sorted(graph.keys())
+    node_indices = {n: i for i, n in enumerate(all_nodes)}
+    for n1 in all_nodes:
+        for n2 in graph[n1].get('prerequisites', []):
+            f.write("%d " % node_indices[n2])
+        f.write('\n')
+
+with open("dist_graph.txt", 'w') as f:
+    export_optimiser_dists(node_distances, graph, f)
+with open("dep_graph.txt", 'w') as f:
+    export_optimiser_constraints(graph, f)
+
+def load_optimiser_pool(graph, f):
+    all_nodes = sorted(graph.keys())
+    pool = []
+    for line in f.readlines():
+        pool.append([all_nodes[int(i)] for i in line.split()])
+    return pool
+with open("optimiser_result.txt", 'r') as f:
+    pool = load_optimiser_pool(graph, f)
+
+
 def evaluate_route(route):
     return sum(node_distances[graph[r1]['giver'].lower()][graph[r2]['giver'].lower()] for r1, r2 in zip(route, route[1:]))
-
+best = min(pool, key=evaluate_route)
 
 def route_valid(route, start):
     if route[:len(start)] != start:
@@ -205,20 +200,22 @@ def mutate_route(route, start, mutations=1):
             successful_mutations += 1
             if successful_mutations == mutations:
                 return new_route
-#
-#
-# POOL_SIZE = 10000
-# ITERATIONS = 5
-# BRANCHING = 40
-# MUTATIONS = 200
-#
-# pool = [mutate_route(test, start, MUTATIONS) for _ in xrange(POOL_SIZE)]
-#
-# for i in range(ITERATIONS):
-#     pool = sorted(pool, key=evaluate_route, reverse=False)[:POOL_SIZE / BRANCHING]
-#     print ("iteration %d, best %.2f" % (i, evaluate_route(pool[0])))
-#
-#     pool = [mutate_route(r, start, MUTATIONS) for _ in range(BRANCHING) for r in pool]
+
+
+POOL_SIZE = 1000
+ITERATIONS = 5
+BRANCHING = 40
+MUTATIONS = 30
+
+pool = [mutate_route(test, start, MUTATIONS) for _ in xrange(POOL_SIZE)]
+
+for i in range(ITERATIONS):
+    pool = sorted(pool, key=evaluate_route, reverse=False)[:POOL_SIZE / BRANCHING]
+    print ("iteration %d, best %.2f" % (i, evaluate_route(pool[0])))
+
+    pool = [mutate_route(r, start, MUTATIONS) for _ in range(BRANCHING) for r in pool]
+best = min(pool, key=evaluate_route)
+# compare the two heatmaps (dijkstra/outsourced FW)
 
 
 # Sanctus Mark and recall too far apart, blocking other usages of Mark
@@ -237,7 +234,7 @@ with open("speedrun_route_pool.bin", 'rb') as f:
 
 
 
-best = min(pool, key=evaluate_route)
+
 
 # edges = [(p, n) for n in graph for p in graph[n].get('prerequisites', [])]
 # import pydot
@@ -252,13 +249,13 @@ def get_node_distance(n1, n2):
     return node_distances[graph[n1]['giver'].lower()][graph[n2]['giver'].lower()]
 
 
-floyd_warshall_path(node_to_vertex['vivec_god'], node_to_vertex['trebonius artorius'], prev)
+
 
 def blow_up_route(route):
     result = []
 
     for node1, node2 in zip(route, route[1:]):
-        subroute = floyd_warshall_path(node_to_vertex[graph[node1]['giver'].lower()], node_to_vertex[graph[node2]['giver'].lower()], prev)
+        subroute = floyd_warshall_path(all_node_locations[graph[node1]['giver'].lower()], all_node_locations[graph[node2]['giver'].lower()], prev)
         result.append(subroute[:-1])
 
     return result
@@ -326,14 +323,14 @@ def score_mark_arrangement(marks, route, big_route, dist):
 
         big_route_counter += len(br)
 
-        r1_vertex = node_to_vertex[graph[r1]['giver'].lower()]
-        r2_vertex = node_to_vertex[graph[r2]['giver'].lower()]
+        r1_vertex = all_node_locations[graph[r1]['giver'].lower()]
+        r2_vertex = all_node_locations[graph[r2]['giver'].lower()]
 
-        if last_mark is not None and dist[r1_vertex][r2_vertex] > dist[last_mark][r2_vertex]:
-            total_cost += dist[last_mark][r2_vertex]
+        if last_mark is not None and floyd_warshall_distance(r1_vertex, r2_vertex, dist) > floyd_warshall_distance(last_mark, r2_vertex, dist):
+            total_cost += floyd_warshall_distance(last_mark, r2_vertex, dist)
             took_recall = True
         else:
-            total_cost += dist[r1_vertex][r2_vertex]
+            total_cost += floyd_warshall_distance(r1_vertex, r2_vertex, dist)
             took_recall = False
 
     return total_cost
@@ -341,10 +338,10 @@ def score_mark_arrangement(marks, route, big_route, dist):
 #M = get_best_mark_position(best, big_route)
 score_mark_arrangement([0], route, big_route, dist)
 
-POOL_SIZE = 10000
-ITERATIONS = 10
-BRANCHING = 20
-MUTATIONS = 500
+POOL_SIZE = 1000
+ITERATIONS = 100
+BRANCHING = 50
+MUTATIONS = 30
 
 
 def multiple_mark_mutation(marks, number=1):
@@ -377,14 +374,12 @@ def export_route_with_marks(marks, route, dist, prev, fd):
     writer = csv.writer(fd)
     writer.writerow(['Route', 'Location', 'Description', 'Graph Node'])
 
-    cell_node_map = {v.cell.get_full_name(): v for v in pruned_vertices}
-
     output = []
 
     for node1, node2 in zip(route, route[1:]):
         # import pdb; pdb.set_trace()
-        r1_vertex = node_to_vertex[graph[node1]['giver'].lower()]
-        r2_vertex = node_to_vertex[graph[node2]['giver'].lower()]
+        r1_vertex = all_node_locations[graph[node1]['giver'].lower()]
+        r2_vertex = all_node_locations[graph[node2]['giver'].lower()]
         graph_node = graph[node1]
         subroute = floyd_warshall_path(r1_vertex, r2_vertex, prev)
 
@@ -393,7 +388,7 @@ def export_route_with_marks(marks, route, dist, prev, fd):
 
         new_big_route_counter += len(subroute)
 
-        if last_mark is not None and dist[r1_vertex][r2_vertex] > dist[last_mark][r2_vertex]:
+        if last_mark is not None and floyd_warshall_distance(r1_vertex, r2_vertex, dist) > floyd_warshall_distance(last_mark, r2_vertex, dist):
             took_recall = True
             output.append(['Recall -> %s' % last_mark, '', '', ''])
             subroute = floyd_warshall_path(last_mark, r2_vertex, prev)
@@ -404,10 +399,7 @@ def export_route_with_marks(marks, route, dist, prev, fd):
             for i, r in enumerate(zip(subroute, subroute[1:])):
                 r1, r2 = r
                 try:
-                    # import pdb; pdb.set_trace()
-                    c1 = cell_node_map[r1.cell.get_full_name()]
-                    c2 = cell_node_map[r2.cell.get_full_name()]
-                    method, _ = pruned_edges[c1][c2]
+                    method, _ = edges[r1][r2]
                 except KeyError:
                     method = "Walk/Fly"
 
