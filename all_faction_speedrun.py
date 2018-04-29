@@ -228,7 +228,7 @@ subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_recall
                        1000,  # pool size
                        200,  # number of iterations
                        50,  # branching factor
-                       100, ]  # number of random swaps to generate a new route
+                       5, ]  # number of random swaps to generate a new route
                       + args)
 
 
@@ -468,7 +468,7 @@ subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_prop_r
                        10000,  # pool size
                        1000,  # number of iterations
                        10,  # branching factor
-                       100, ]  # number of random swaps to generate a new route
+                       5, ]  # number of random swaps to generate a new route
                       + args)])
 with open("optimiser_result.txt", 'r') as f:
     pool = load_optimiser_pool(graph, f)
