@@ -313,7 +313,7 @@ def export_route(route, edges, alternative_edges, alternative_edges_start, alter
                 except KeyError:
                     method = "Walk/Fly"
 
-                output.append(['%s -> %s' % (method, r2.cell), '', ''])
+                output.append(['%s -> %s' % (method, r2.cell), '', '', ''])
 
     graph_node = graph[route[-1]]
     output.append([str(subroute[-1].cell) if subroute else '', graph_node.get('giver'), graph_node.get('description', node2), node2])
@@ -470,7 +470,7 @@ subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_prop_r
                        10,  # branching factor
                        5, ]  # number of random swaps to generate a new route
                       + args)])
-with open("optimiser_result.txt", 'r') as f:
+with open("optimiser_result.txt.propylons", 'r') as f:
     pool = load_optimiser_pool(graph, f)
 best = min(pool, key=evaluate_route)
 with open("route_1mark_propylons.csv", 'wb') as f:
