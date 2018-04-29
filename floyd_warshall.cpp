@@ -4,9 +4,14 @@
 #include <vector>
 #include <cmath>
 
-int main() {
+int main(int argc, char* argv[]) {
+	if (argc < 4) {
+		std::cerr << "Usage: " << argv[0] << " distances_file distances_export_file path_export_file";
+		return -1;
+	}
+	
 	std::vector<std::vector<double> > dist;
-	std::ifstream source("dist.txt");
+	std::ifstream source(argv[1]);
 	std::string input;
 	double x;
 	
@@ -37,7 +42,7 @@ int main() {
 		std::cout << k << "/" << dist.size() << std::endl;
 	}
 	
-	std::ofstream output("dist_res.txt");
+	std::ofstream output(argv[2]);
 	for (int i = 0; i < dist.size(); i++) {
 		for (int j = 0; j < dist.size(); j++) {
 			output << dist[i][j] << " ";
@@ -46,7 +51,7 @@ int main() {
 	}
 	output.close();
 	
-	output.open("prev_res.txt");
+	output.open(argv[3]);
 	for (int i = 0; i < prev.size(); i++) {
 		for (int j = 0; j < prev.size(); j++) {
 			output << prev[i][j] << " ";

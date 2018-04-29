@@ -68,16 +68,16 @@ def get_closest_exterior_location(location):
 def get_closest_from(locations, source):
     return min(locations, key=lambda l: get_exterior_location_distance(l, source))
 
-WALKING_SPEED = 1./ (30. / 100. / 3600.)
+WALKING_SPEED = 1. / (30. / 100. / 3600.)
 
-def distance(v1, v2, teleport_edges):
+def distance(v1, v2, teleport_edges, walking_speed=WALKING_SPEED):
     # Custom distance function between two vertices that takes care of
     # teleportation (or travel by ship/silt strider) as well as walking
     # between two points in the same cell.
     if v2 in teleport_edges[v1]:
         return teleport_edges[v1][v2][1]
     if (v1.cell == v2.cell) or (not v1.cell.is_interior and not v2.cell.is_interior):
-        return get_distance(v1.coords, v2.coords) / WALKING_SPEED
+        return get_distance(v1.coords, v2.coords) / walking_speed
     else:
         return None
 
@@ -124,7 +124,7 @@ def get_route(prev, start):
     return list(reversed(result))
 
 
-def construct_graph(npcs, cells, extra_locations=[], use_realtime_metrics=False):
+def construct_graph(npcs, cells, extra_locations=[], use_realtime_metrics=False, instant_travel_time=0.):
     print("Constructing the travel graph...")
 
     npc_id_map = {n.name: n for n in npcs}
@@ -139,7 +139,7 @@ def construct_graph(npcs, cells, extra_locations=[], use_realtime_metrics=False)
             if hasattr(r, 'destination'):
                 # Add an instant-travel (in game and real time) teleport
                 # between doors in different cells
-                teleport_edges[ref_pos][r.destination] = ('Door', 0)
+                teleport_edges[ref_pos][r.destination] = ('Door', 0.)
                 vertices.add(ref_pos)    
                 vertices.add(r.destination)
             elif r.name in npc_id_map:
@@ -149,13 +149,13 @@ def construct_graph(npcs, cells, extra_locations=[], use_realtime_metrics=False)
                         # NPCs providing travel services: guild guides do
                         # instantaneous teleportation
                         if npc_id_map[r.name].class_name == 'Guild Guide':
-                            teleport_edges[ref_pos][dest] = ('Guild Guide', 0)
+                            teleport_edges[ref_pos][dest] = ('Guild Guide', instant_travel_time)
                         else:
                             # Ships/silt striders have a 16000-per-game hour
                             # travel speed (this is the only difference
                             # between realtime and gametime travel).
                             if use_realtime_metrics:
-                                teleport_edges[ref_pos][dest] = ('Travel', 0)
+                                teleport_edges[ref_pos][dest] = ('Travel', instant_travel_time)
                             else:
                                 teleport_edges[ref_pos][dest] = ('Travel', get_distance(ref_pos.coords, dest.coords) / 16000.)
                         vertices.add(dest)
@@ -171,12 +171,12 @@ def construct_graph(npcs, cells, extra_locations=[], use_realtime_metrics=False)
     vertices = vertices.union(divine_marker_locations).union(temple_marker_locations)
     for v in vertices:
         try:
-            teleport_edges[v][get_closest_from(divine_marker_locations, v)] = ('Divine Intervention', 0)
+            teleport_edges[v][get_closest_from(divine_marker_locations, v)] = ('Divine Intervention', 0.)
         except AssertionError:
             pass
         
         try:
-            teleport_edges[v][get_closest_from(temple_marker_locations, v)] = ('Almsivi Intervention', 0)
+            teleport_edges[v][get_closest_from(temple_marker_locations, v)] = ('Almsivi Intervention', 0.)
         except AssertionError:
             pass
     

@@ -1,17 +1,18 @@
 import csv
+import subprocess
 from collections import defaultdict
-from copy import copy
-
-from yaml import load
+from copy import deepcopy
 from pprint import pprint
 
-from dataloading import load_cells_npcs, Location
-from travel import construct_graph, dijkstra, prune_graph, get_route, coalesce_cells, distance
-import cPickle
-import seaborn as sns
-from matplotlib import pyplot as plt
+import PIL as PIL
 import numpy as np
-import random
+import pydot
+from matplotlib import pyplot as plt
+from yaml import load
+
+from dataloading import load_cells_npcs, Location
+from drawing import to_map
+from travel import construct_graph, distance, get_closest_exterior_location
 
 plt.style.use('seaborn')
 plt.style.use('seaborn-paper')
@@ -65,6 +66,14 @@ for node, items in graph.items():
 test = linearize(graph, start)
 pprint(test)
 
+edges = [(p, n) for n in graph for p in graph[n].get('prerequisites', [])]
+
+
+G = pydot.graph_from_edges(edge_list=edges, directed=True)
+
+with open("quest_graph.png", 'wb') as f:
+    f.write(G.create_png(prog=['sfdp', '-Goverlap=false', '-Gsplines=true']))
+
 # Load stuff from the Enchanted Editor dump
 cells, npcs = load_cells_npcs("../Morrowind.esm.txt")
 
@@ -76,23 +85,50 @@ for n in all_node_ids:
     if n not in all_node_locations:
         print("Failed to locate %s" % n)
 
-vertices, edges = construct_graph(npcs, cells, extra_locations=all_node_locations.values(), use_realtime_metrics=True)
+walking_speed = 750  # game units per real second assuming levitation + boots of blinding speed
+travel_time = 5  # roughly 10 seconds to travel with Silt Strider/Guild guide -- to account for dialogue clicking and loading time + nudge
+# the optimiser into not flailing all over the game map
+
+vertices, edges = construct_graph(npcs, cells, extra_locations=all_node_locations.values(), use_realtime_metrics=True, instant_travel_time=travel_time)
 sorted_vertices = sorted(vertices)
 vertex_index = {v: i for i, v in enumerate(sorted_vertices)}
 
+
+# Add a Recall edge to e.g. a Mages Guild teleporter
+# Assuming it's easy for us to set up a Mark at one (e.g. during the initial stage or when the Silent Pilgrimage quest ends)
+def add_recall_edges(vertices, teleport_edges, mg_location):
+    new_edges = deepcopy(teleport_edges)
+    for v in vertices:
+        new_edges[v][mg_location] = ('Recall', 0)
+    return new_edges
+
+recall_edges = add_recall_edges(vertices, edges, all_node_locations['ajira'])
+no_recall_edges = edges
+
+# when we've placed the mark at the Sanctus Shrine, we can Recall there instead
+edges = add_recall_edges(vertices, edges, all_node_locations['llirala sendas'])
+
+# Farm Floyd-Warshall pathfinding out to a separate C++ program
 def export_fw_data(edges, fd):
     INFINITY = 1e10
 
     for v1 in sorted_vertices:
         for v2 in sorted_vertices:
-            d = distance(v1, v2, edges)
+            d = distance(v1, v2, edges, walking_speed)
             fd.write('%f ' % (d if d is not None else INFINITY))
         fd.write('\n')
 
 
+with open("dist_norecall.txt", 'wb') as f:
+    export_fw_data(no_recall_edges, f)
 with open("dist.txt", 'wb') as f:
     export_fw_data(edges, f)
+with open("dist_recall.txt", 'wb') as f:
+    export_fw_data(recall_edges, f)
 
+
+# Reconstruct path from the FW dump (strictly speaking prev[i, j] should be called next here,
+# but next is a reserved keyword..
 def floyd_warshall_path(v1, v2, prev):
     i1, i2 = vertex_index[v1], vertex_index[v2]
 
@@ -104,39 +140,65 @@ def floyd_warshall_path(v1, v2, prev):
         result.append(sorted_vertices[i1])
     return result
 
+
+# Do the pathfinding with the two Mark points at the same time
+fw_dist = subprocess.Popen(["./floyd_warshall.exe", "dist.txt", "dist_res.txt", "prev_res.txt"])
+fw_dist_recall = subprocess.Popen(["./floyd_warshall.exe", "dist_recall.txt", "dist_recall_res.txt", "prev_recall_res.txt"])
+fw_dist.wait()
+fw_dist_recall.wait()
+
 dist = np.loadtxt('dist_res.txt')
 prev = np.loadtxt('prev_res.txt', dtype=int)
+
+dist_recall = np.loadtxt('dist_recall_res.txt')
+prev_recall = np.loadtxt('prev_recall_res.txt', dtype=int)
+
 
 def floyd_warshall_distance(v1, v2, dist):
     return dist[vertex_index[v1], vertex_index[v2]]
 
-floyd_warshall_distance(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], dist)
-floyd_warshall_path(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], prev)
+
+print(floyd_warshall_distance(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], dist))
+print(floyd_warshall_path(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], prev))
+
+print(floyd_warshall_distance(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], dist_recall))
+print(floyd_warshall_path(all_node_locations['vivec_god'], all_node_locations['trebonius artorius'], prev_recall))
+
 
 # create a matrix of node-to-node best distances
-node_distances = defaultdict(dict)
-for n1 in all_node_ids:
-    for n2 in all_node_ids:
-        node_distances[n1][n2] = floyd_warshall_distance(all_node_locations[n1], all_node_locations[n2], dist) if n1 != n2 else 0
+def make_node_distance_matrix(dist):
+    node_distances = defaultdict(dict)
+    for n1 in all_node_ids:
+        for n2 in all_node_ids:
+            node_distances[n1][n2] = floyd_warshall_distance(all_node_locations[n1], all_node_locations[n2], dist) if n1 != n2 else 0
+    return node_distances
 
 
+node_distances = make_node_distance_matrix(dist)
+node_distances_recall = make_node_distance_matrix(dist_recall)
+
+# plot a heatmap of travel times
 node_matrix = []
 for k, v in node_distances.iteritems():
     node_matrix.append([v[i] for i in node_distances])
 import seaborn as sns
+
 ax = sns.clustermap(node_matrix, yticklabels=node_distances.keys(), xticklabels=node_distances.keys(), figsize=(15, 15))
 sns.set(font_scale=0.7)
 plt.setp(ax.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
 plt.setp(ax.ax_heatmap.xaxis.get_majorticklabels(), rotation=90)
-plt.savefig("travel_heatmap_cluster_new.png", dpi=200)
+plt.savefig("travel_heatmap_cluster.png", dpi=200)
+plt.close()
 
 
+# Export distances and graph constraints for the optimiser
 def export_optimiser_dists(node_distances, graph, f):
     all_nodes = sorted(graph.keys())
     for n1 in all_nodes:
         for n2 in all_nodes:
             f.write(str(node_distances[graph[n1]['giver'].lower()][graph[n2]['giver'].lower()]) + ' ')
         f.write('\n')
+
 
 def export_optimiser_constraints(graph, f):
     all_nodes = sorted(graph.keys())
@@ -146,10 +208,29 @@ def export_optimiser_constraints(graph, f):
             f.write("%d " % node_indices[n2])
         f.write('\n')
 
-with open("dist_graph.txt", 'w') as f:
+
+with open("dist_graph_norecall.txt", 'w') as f:
     export_optimiser_dists(node_distances, graph, f)
+with open("dist_graph_recall.txt", 'w') as f:
+    export_optimiser_dists(node_distances_recall, graph, f)
 with open("dep_graph.txt", 'w') as f:
     export_optimiser_constraints(graph, f)
+
+
+
+all_nodes = sorted(graph.keys())
+# Optimiser takes the quest graph nodes between which the alternative travel distances are used (in this case,
+# from when we've placed a mark at the Sanctus Shrine to when we actually do the silent pilgrimage) as well as
+# a list of nodes that have to come at the beginning of the route
+args = [all_nodes.index('tt_set_sanctus_mark'), all_nodes.index('tt_endryn_1_end'), all_nodes.index('mg_ajira_1'), all_nodes.index('mg_edwinna_1')]
+
+subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_recall.txt", "dist_graph_norecall.txt",
+                       1000,  # pool size
+                       200,  # number of iterations
+                       50,  # branching factor
+                       100, ]  # number of random swaps to generate a new route
+                      + args)
+
 
 def load_optimiser_pool(graph, f):
     all_nodes = sorted(graph.keys())
@@ -157,13 +238,17 @@ def load_optimiser_pool(graph, f):
     for line in f.readlines():
         pool.append([all_nodes[int(i)] for i in line.split()])
     return pool
+
+
 with open("optimiser_result.txt", 'r') as f:
     pool = load_optimiser_pool(graph, f)
 
 
 def evaluate_route(route):
     return sum(node_distances[graph[r1]['giver'].lower()][graph[r2]['giver'].lower()] for r1, r2 in zip(route, route[1:]))
+
 best = min(pool, key=evaluate_route)
+
 
 def route_valid(route, start):
     if route[:len(start)] != start:
@@ -177,198 +262,29 @@ def route_valid(route, start):
     return True
 
 
-import random
-
-
-def move(xs, i, j):
-    if j < 0:
-        return xs[:i + j] + [xs[i]] + xs[i + j:i] + xs[i + 1:]
-    else:
-        return xs[:i] + xs[i + 1:i + j + 1] + [xs[i]] + xs[i + j + 1:]
-
-
-def mutate_route(route, start, mutations=1):
-    successful_mutations = 0
-    while True:
-        i = random.randrange(0, len(route))
-        j = 0
-        while j == 0:
-            j = random.randrange(-i, len(route) - i - 1)
-        new_route = move(route, i, j)
-
-        if route_valid(new_route, start):
-            successful_mutations += 1
-            if successful_mutations == mutations:
-                return new_route
-
-
-POOL_SIZE = 1000
-ITERATIONS = 5
-BRANCHING = 40
-MUTATIONS = 30
-
-pool = [mutate_route(test, start, MUTATIONS) for _ in xrange(POOL_SIZE)]
-
-for i in range(ITERATIONS):
-    pool = sorted(pool, key=evaluate_route, reverse=False)[:POOL_SIZE / BRANCHING]
-    print ("iteration %d, best %.2f" % (i, evaluate_route(pool[0])))
-
-    pool = [mutate_route(r, start, MUTATIONS) for _ in range(BRANCHING) for r in pool]
-best = min(pool, key=evaluate_route)
-# compare the two heatmaps (dijkstra/outsourced FW)
-
-
-# Sanctus Mark and recall too far apart, blocking other usages of Mark
-# High-leveled killings early before Blunt training/getting the Hammer
-# need to calculate the amount of potions required (Health and Speed too, so that we have enough money and Alch skill. Fortify Strength too when we're about to fight?
-# also consider the main damage dealer -- Blunt?
-# finally, levelling issues -- might accidentally level things that we are in the middle of levelling. Perhaps worth pulling all training back?
-# mg looting weirdness: get quest from aengoth and then do stuff around MG (including teleportation)
-
-
-
-with open("speedrun_route_pool.bin", 'rb') as f:
-    pool = cPickle.load(f)
-# with open("speedrun_route_pool.bin", 'wb') as f:
-#     cPickle.dump(pool, f)
-
-
-
-
-
-# edges = [(p, n) for n in graph for p in graph[n].get('prerequisites', [])]
-# import pydot
-#
-# G = pydot.graph_from_edges(edge_list=edges, directed=True)
-#
-# with open("quest_graph.png", 'wb') as f:
-#     f.write(G.create_png(prog=['sfdp', '-Goverlap=false', '-Gsplines=true']))
-
-
 def get_node_distance(n1, n2):
     return node_distances[graph[n1]['giver'].lower()][graph[n2]['giver'].lower()]
 
 
-
-
-def blow_up_route(route):
-    result = []
-
-    for node1, node2 in zip(route, route[1:]):
-        subroute = floyd_warshall_path(all_node_locations[graph[node1]['giver'].lower()], all_node_locations[graph[node2]['giver'].lower()], prev)
-        result.append(subroute[:-1])
-
-    return result
-
 def get_best_mark_position(route):
-    # cell_node_map = {v.cell: v for v in pruned_vertices}
     return min(
         (sum(get_node_distance(r1, r2) for r1, r2 in zip(route[:i], route[1:i]))
-                           + sum(
+         + sum(
             min(get_node_distance(r, r2), get_node_distance(r1, r2)) for r1, r2 in zip(route[i:], route[i + 1:])),
          i, r) for i, r in enumerate(route)
     )
 
 
-route = best
-big_route = blow_up_route(route)
+# reconstruct route and output it
 
-total_route = [b for br in big_route for b in br]
+def export_route(route, edges, alternative_edges, alternative_edges_start, alternative_edges_end, prev, alternative_prev, fd):
+    alternative_recall = False
 
-#
-# can't have marks between tt_set_sanctus_mark and tt_endryn_1_end
-big_route_c = 0
-for br, node in zip(big_route, route):
-    if node == 'tt_set_sanctus_mark':
-        forbidden_start = big_route_c
-    if node == 'tt_endryn_1_end':
-        forbidden_end = big_route_c
+    def get_edges():
+        return alternative_edges if alternative_recall else edges
 
-    big_route_c += len(br)
-
-U = set(range(len(total_route)))
-for i in xrange(forbidden_start, forbidden_end):
-    U.remove(i)
-
-
-def mutate_mark_arrangement(marks):
-    marks = copy(marks)
-    # randomly add/remove a mark
-    if len(marks) == len(U):
-        marks.remove(random.sample(marks, 1)[0])
-    elif len(marks) == 0:
-        marks.add(random.sample(U.difference(marks), 1)[0])
-    elif random.random() > 0.5:
-        marks.add(random.sample(U.difference(marks), 1)[0])
-    else:
-        marks.remove(random.sample(marks, 1)[0])
-    return marks
-
-
-def score_mark_arrangement(marks, route, big_route, dist):
-    total_cost = 0
-    last_mark = None
-    big_route_counter = 0
-    took_recall = False  # if we recalled from a previous point, we can't place a mark on the intermediate points we would have visited otherwise
-
-    # Resulting route
-
-
-    for r in zip([[]] + big_route, route, route[1:]): # make sure big_route doesn't look ahead
-        br, r1, r2 = r
-        if not took_recall:
-            for i, m in enumerate(br):
-                if i + big_route_counter in marks:
-                    last_mark = m
-
-        big_route_counter += len(br)
-
-        r1_vertex = all_node_locations[graph[r1]['giver'].lower()]
-        r2_vertex = all_node_locations[graph[r2]['giver'].lower()]
-
-        if last_mark is not None and floyd_warshall_distance(r1_vertex, r2_vertex, dist) > floyd_warshall_distance(last_mark, r2_vertex, dist):
-            total_cost += floyd_warshall_distance(last_mark, r2_vertex, dist)
-            took_recall = True
-        else:
-            total_cost += floyd_warshall_distance(r1_vertex, r2_vertex, dist)
-            took_recall = False
-
-    return total_cost
-
-#M = get_best_mark_position(best, big_route)
-score_mark_arrangement([0], route, big_route, dist)
-
-POOL_SIZE = 1000
-ITERATIONS = 100
-BRANCHING = 50
-MUTATIONS = 30
-
-
-def multiple_mark_mutation(marks, number=1):
-    result = marks
-    for _ in xrange(number):
-        result = mutate_mark_arrangement(result)
-    return result
-
-
-pool = [multiple_mark_mutation(U, MUTATIONS) for _ in xrange(POOL_SIZE)]
-for i in range(ITERATIONS):
-    pool = sorted(pool, key=lambda m: score_mark_arrangement(m, route, big_route, dist), reverse=False)[:POOL_SIZE / BRANCHING]
-    print ("iteration %d, best %.2f" % (i, score_mark_arrangement(pool[0], route, big_route, dist)))
-
-    pool = [multiple_mark_mutation(r, MUTATIONS) for _ in range(BRANCHING) for r in pool]
-
-best = min(pool, key=lambda m: score_mark_arrangement(m, route, big_route, dist))
-
-
-
-# reconstruct route (have mark/recall + remove marks that are unused)
-
-def export_route_with_marks(marks, route, dist, prev, fd):
-    last_mark = None
-    big_route_counter = 0
-    new_big_route_counter = 0
-    took_recall = False  # if we recalled from a previous point, we can't place a mark on the intermediate points we would have visited otherwise
+    def get_prev():
+        return alternative_prev if alternative_recall else prev
 
     # Resulting route
     writer = csv.writer(fd)
@@ -377,55 +293,185 @@ def export_route_with_marks(marks, route, dist, prev, fd):
     output = []
 
     for node1, node2 in zip(route, route[1:]):
-        # import pdb; pdb.set_trace()
+        if node1 == alternative_edges_start:
+            alternative_recall = True
+        if node1 == alternative_edges_end:
+            alternative_recall = False
+
         r1_vertex = all_node_locations[graph[node1]['giver'].lower()]
         r2_vertex = all_node_locations[graph[node2]['giver'].lower()]
         graph_node = graph[node1]
-        subroute = floyd_warshall_path(r1_vertex, r2_vertex, prev)
-
+        subroute = floyd_warshall_path(r1_vertex, r2_vertex, get_prev())
 
         output.append([str(subroute[0].cell) if subroute else '', graph_node.get('giver'), graph_node.get('description', node1), node1])
-
-        new_big_route_counter += len(subroute)
-
-        if last_mark is not None and floyd_warshall_distance(r1_vertex, r2_vertex, dist) > floyd_warshall_distance(last_mark, r2_vertex, dist):
-            took_recall = True
-            output.append(['Recall -> %s' % last_mark, '', '', ''])
-            subroute = floyd_warshall_path(last_mark, r2_vertex, prev)
-        else:
-            took_recall = False
 
         if len(subroute) > 1:
             for i, r in enumerate(zip(subroute, subroute[1:])):
                 r1, r2 = r
                 try:
-                    method, _ = edges[r1][r2]
+                    method, _ = get_edges()[r1][r2]
                 except KeyError:
                     method = "Walk/Fly"
 
-                if (i + big_route_counter) in marks and not took_recall:
-                    last_mark = r1
-                    output.append(['Mark; %s -> %s' % (method, r2.cell), '', ''])
-                else:
-                    output.append(['%s -> %s' % (method, r2.cell), '', ''])
-        big_route_counter = new_big_route_counter
+                output.append(['%s -> %s' % (method, r2.cell), '', ''])
 
     graph_node = graph[route[-1]]
     output.append([str(subroute[-1].cell) if subroute else '', graph_node.get('giver'), graph_node.get('description', node2), node2])
 
-    # need to do a backwards pass through the output to eliminate spurious marks
-    seen_recall = False
-    for row in output[::-1]:
-        if "Recall ->" in row[0]: # strictly speaking we should have an extra cell here or something
-            seen_recall = True
-        if "Mark; " in row[0]:
-            if seen_recall:
-                seen_recall = False
-            else:
-                row[0] = row[0][6:]
-
     for row in output:
         writer.writerow(row)
 
-with open("route_marks.csv", 'wb') as f:
-    export_route_with_marks(best, route, dist, prev, f)
+with open("route_1mark.csv", 'wb') as f:
+    export_route(best, recall_edges, edges, 'tt_set_sanctus_mark', 'tt_endryn_1_end', prev_recall, prev, f)
+
+
+# Draw the average time it takes to travel from any vertex on the travel graph to any questgiver
+dist_norecall = np.loadtxt('dist_norecall_res.txt')
+MAP_PATH = "../map_small.jpg"
+
+def get_average_distance(l, dist):
+    distances = 0.
+    for nv in graph.values():
+        distances += floyd_warshall_distance(l, all_node_locations[nv['giver'].lower()], dist)
+    return distances / len(graph)
+
+map_orig = PIL.Image.open(MAP_PATH)
+overlay = np.zeros(map_orig.size)
+
+xs = []
+ys = []
+
+for l in vertex_index:
+    if not l.cell.is_interior:
+        map_x, map_y = to_map(l.coords[0], l.coords[1])
+        overlay[int(round(map_x)), int(round(map_y))] = get_average_distance(l, dist_norecall)
+        xs.append([map_x, map_y])
+        ys.append(get_average_distance(l, dist_norecall))
+
+# this doesn't look good, sort of like a Voronoi diagram -- really want to recalculate the travel time from _every_ pixel
+# on the map for a good overlay (since we can always Almsivi/Divine/Recall from any point).
+from scipy.interpolate import NearestNDInterpolator
+nd = NearestNDInterpolator(xs, ys)
+
+overlay = np.array([[nd(i, j) for j in xrange(map_orig.size[1])] for i in xrange(map_orig.size[0])])
+
+plt.figure(figsize=(10, 15))
+plt.imshow(map_orig, alpha=0.8)
+CS = plt.contour(overlay.T, np.linspace(18, 26, 25), alpha=1, linewidths=2, cmap=plt.get_cmap('winter'))
+plt.clabel(CS, inline=1, fontsize=10, fmt=lambda c: "%.2fs" % c)
+plt.gca().grid(False)
+plt.savefig("map_average_travel.png")
+
+
+
+def draw_route(route, edges, alternative_edges, alternative_edges_start, alternative_edges_end, prev, alternative_prev, output_path):
+    # todo unify this with export_route?
+    alternative_recall = False
+
+    color_map = {
+        'Walk/Fly': (200, 200, 200),
+        'Door': (200, 200, 200),
+        'Almsivi Intervention': (0, 0, 200),
+        'Divine Intervention': (0, 0, 200),
+        'Guild Guide': (200, 0, 0),
+        'Recall': (0, 200, 0),
+        'Travel': (200, 200, 0),
+    }
+
+
+    def get_edges():
+        return alternative_edges if alternative_recall else edges
+
+    def get_prev():
+        return alternative_prev if alternative_recall else prev
+
+    map_orig = PIL.Image.open(MAP_PATH)
+    drawer = PIL.ImageDraw.Draw(map_orig)
+    coords = []
+    colors = []
+
+    for node1, node2 in zip(route, route[1:]):
+        if node1 == alternative_edges_start:
+            alternative_recall = True
+        if node1 == alternative_edges_end:
+            alternative_recall = False
+
+        r1_vertex = all_node_locations[graph[node1]['giver'].lower()]
+        r2_vertex = all_node_locations[graph[node2]['giver'].lower()]
+        subroute = floyd_warshall_path(r1_vertex, r2_vertex, get_prev())
+
+        c = get_closest_exterior_location(subroute[0]).coords
+        t = to_map(c[0], c[1])
+        drawer.ellipse((t[0] - 5,
+                        t[1] - 5,
+                        t[0] + 5,
+                        t[1] + 5), fill=(0, 128, 0))
+
+        if len(subroute) > 1:
+            for i, r in enumerate(zip(subroute, subroute[1:])):
+
+                r1, r2 = r
+                try:
+                    method, _ = get_edges()[r1][r2]
+                except KeyError:
+                    method = "Walk/Fly"
+
+                c = get_closest_exterior_location(r1).coords
+                t = to_map(c[0], c[1])
+                coords.append((int(round(t[0])), int(round(t[1]))))
+                colors.append(color_map[method])
+
+    for c0, c1, col in zip(coords, coords[1:], colors):
+        drawer.line([c0, c1], fill=col, width=2)
+    map_orig.save(output_path)
+
+draw_route(best, recall_edges, edges, 'tt_set_sanctus_mark', 'tt_endryn_1_end', prev_recall, prev, "final_route_map.png")
+
+
+# Test how the route improves if we have all Propylon indices
+PROPYLONS = ['Valenvaryon', 'Rotheran', 'Indoranyon', 'Falensarano', 'Telasero', 'Marandus', 'Hlormaren', 'Andasreth', 'Berandas', 'Falasmaryon']
+def add_propylon_edges(vertices, teleport_edges):
+    new_edges = deepcopy(teleport_edges)
+    propylon_vertices = [[v for v in vertices if '%s, Propylon Chamber' % p in v.cell_id][0] for p in PROPYLONS]
+    for i in xrange(10):
+        new_edges[propylon_vertices[i]][propylon_vertices[(i - 1) % 10]] = ('Propylon Teleport', 0)
+        new_edges[propylon_vertices[i]][propylon_vertices[(i + 1) % 10]] = ('Propylon Teleport', 0)
+    return new_edges
+
+recall_propylon_edges = add_propylon_edges(vertices, recall_edges)
+propylon_edges = add_propylon_edges(vertices, edges)
+with open("dist_prop.txt", 'wb') as f:
+    export_fw_data(propylon_edges, f)
+with open("dist_recall_prop.txt", 'wb') as f:
+    export_fw_data(recall_propylon_edges, f)
+
+fw_dist = subprocess.Popen(["./floyd_warshall.exe", "dist_prop.txt", "dist_prop_res.txt", "prev_prop_res.txt"])
+fw_dist_recall = subprocess.Popen(["./floyd_warshall.exe", "dist_prop_recall.txt", "dist_prop_recall_res.txt", "prev_prop_recall_res.txt"])
+fw_dist.wait()
+fw_dist_recall.wait()
+
+dist_prop = np.loadtxt('dist_prop_res.txt')
+prev_prop = np.loadtxt('prev_prop_res.txt', dtype=int)
+
+dist_prop_recall = np.loadtxt('dist_recall_prop_res.txt')
+prev_prop_recall = np.loadtxt('prev_recall_prop_res.txt', dtype=int)
+
+node_distances_prop = make_node_distance_matrix(dist_prop)
+node_distances_prop_recall = make_node_distance_matrix(dist_prop_recall)
+
+with open("dist_graph_prop_norecall.txt", 'w') as f:
+    export_optimiser_dists(node_distances_prop, graph, f)
+with open("dist_graph_prop_recall.txt", 'w') as f:
+    export_optimiser_dists(node_distances_prop_recall, graph, f)
+args = [all_nodes.index('tt_set_sanctus_mark'), all_nodes.index('tt_endryn_1_end'), all_nodes.index('mg_ajira_1'), all_nodes.index('mg_edwinna_1')]
+subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_prop_recall.txt", "dist_graph_prop_norecall.txt"] + [str(i) for i in ([
+                       10000,  # pool size
+                       1000,  # number of iterations
+                       10,  # branching factor
+                       100, ]  # number of random swaps to generate a new route
+                      + args)])
+with open("optimiser_result.txt", 'r') as f:
+    pool = load_optimiser_pool(graph, f)
+best = min(pool, key=evaluate_route)
+with open("route_1mark_propylons.csv", 'wb') as f:
+    export_route(best, recall_propylon_edges, propylon_edges, 'tt_set_sanctus_mark', 'tt_endryn_1_end', prev_prop_recall, prev_prop, f)

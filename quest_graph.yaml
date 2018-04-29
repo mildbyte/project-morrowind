@@ -25,11 +25,6 @@
 # Sneak: 15 -> 30 (secondary for TG and MT -- extra 15 AGI points to help with Marksman training counting Light Armor)
 # Mercantile: 15 -> 25 (secondary for HH, gives +5 Personality points to meet IC attribute requirements)
 
-# Current issues:
-# about 5k short at missun with the intended route (and getting however much we got from the scamp)
-# extra 15k needed to train blunt
-# 7987 remaining with all that (made money from TG quests
-
 # Training nodes
 training_alveleg:
   # we're killing him as part of the FG quest and he trains Marksman (45), Sneak (42) and Block (38)
@@ -91,11 +86,16 @@ mg_edwinna_scarab_plans:
 mg_edwinna_airship_plans:
   description: Get airship plans
   giver: lugrub gro-ogdum # orc near Bethamez that is a part of the IL quest
-mg_master:
-  description: Go to Trebonius, should get the Arch-Mage topic. Challenge him to a duel and kill him.
+mg_master_duel:
+  description: Go to Trebonius, should get the Arch-Mage topic. Challenge him to a duel.
   giver: trebonius artorius
   prerequisites:
     - mg_edwinna_2
+mg_master:
+  description: Kill Trebonius in the Arena
+  giver: tanusea veloth # she's in the Arena Pit, can't use Trebonius because he gets teleported there
+  prerequisites:
+    - mg_master_duel
 
 fg_eydis_1_start:
   description: Join FG and start the Rats quest
@@ -256,12 +256,20 @@ tg_habasi_1:
   giver: habasi
   prerequisites:
     - fg_eydis_3_do_and_join_tg
-    - tg_razhid_artifacts # most action is in balmora -- this one requires to travel to hla oad so separate
+    - tg_nerano_key
+    - tg_hlaalo_brandy
+    - tg_razhid_artifacts # most action is in balmora -- this one requires to travel to hla oad
 tg_razhid_artifacts:
   description: Steal Dwemer artifacts from Ra'Zhid
   giver: ra'zhid
   prerequisites:
     - misc_amulet_of_shadows # all people located in a single room, tough without stealth
+tg_nerano_key:
+  description: Taunt and kill Sovor Trandel to get Nerano Manor Key
+  giver: sovor trandel
+tg_hlaalo_brandy:
+  description: Get Brandy from near Ralen Hlaalo's body
+  giver: ralen hlaalo
 tg_habasi_2_get:
   description: Get Free Bragor quest
   giver: habasi
@@ -304,7 +312,7 @@ tg_helende_1_get:
   prerequisites:
     - fg_eydis_3_do_and_join_tg
 tg_helende_1_end_2_get:
-  description: Hand in Recipes, get and hand in Retorn, get the Protection quest
+  description: Hand in Recipes, get and hand in Retort, get the Protection quest
   giver: big helende
   prerequisites:
     - fg_eydis_3_do_and_join_tg
@@ -315,6 +323,7 @@ tg_helende_3:
   giver: big helende
   prerequisites:
     - tg_helende_guard
+    - tg_aengoth_2_redoran_loot
 tg_helende_retort:
   description: Buy/steal retort from Berwen
   giver: berwen
@@ -327,7 +336,7 @@ tg_helende_guard:
   description: Talk to Arielle Phiencel about protection, bribe her with ebony from Arvs-Drelen
   giver: arielle phiencel
   prerequisites:
-    - il_darius_2_do # Ebony in the same room where the Orc is held
+    - il_darius_3_do # Ebony in the same room where the Orc is held
     - tg_helende_1_end_2_get
 tg_jim_1:
   description: Talk to Jim, get promoted to Captain, get and hand in the Nads quest
@@ -390,9 +399,14 @@ tt_7graces_vivec:
   giver: vivec_god # roughly the location for the 3 shrines
   prerequisites:
     - tt_join
-tt_7graces_gnisis:
-  description: Do Gnisis pilgrimages (Ash Mask (buy potion from the Temple) and Koal Cave (Dreugh Wax taken from Caldera where we stole the alchemy set))
-  giver: punibi yahaz # roughly between the Ash Mask location and the Koal Cave
+tt_7graces_gnisis_ashmask:
+  description: Do Ash Mask (buy potion from the Temple)). Get Vivec's Touch spell
+  giver: misc_vivec_ashmask_01
+  prerequisites:
+    - tt_join
+tt_7graces_gnisis_koal:
+  description: Do Koal Cave (Dreugh Wax taken from Caldera where we stole the alchemy set)
+  giver: ac_shrine_koalcave
   prerequisites:
     - tt_join
 tt_7graces_kummu:
@@ -409,13 +423,14 @@ tt_cure_orc:
   description: Cure the Orc in the shrine with Vivec's Touch spell
   giver: bulfim_gra_shugarz
   prerequisites:
-    - tt_7graces_gnisis # not required but gives Vivec's Touch spell
+    - tt_7graces_gnisis_ashmask # not required but gives Vivec's Touch spell
 tt_tuls_1_get:
   description: Get and hand in Compassion (make sure to keep the Cure Blight potion for extra Temple rep), get False Incarnate quest
   giver: tuls valen
   prerequisites:
     - tt_7graces_vivec
-    - tt_7graces_gnisis
+    - tt_7graces_gnisis_ashmask
+    - tt_7graces_gnisis_koal
     - tt_7graces_kummu
     - tt_7graces_gg
     - tt_cure_orc
@@ -444,7 +459,8 @@ tt_endryn_1_get:
   giver: endryn llethan
   prerequisites:
     - tt_7graces_vivec
-    - tt_7graces_gnisis
+    - tt_7graces_gnisis_ashmask
+    - tt_7graces_gnisis_koal
     - tt_7graces_kummu
     - tt_7graces_gg
 tt_endryn_1_do:
@@ -472,7 +488,8 @@ tt_tharer_1:
   giver: tharer rotheloth
   prerequisites:
     - tt_7graces_vivec
-    - tt_7graces_gnisis
+    - tt_7graces_gnisis_ashmask
+    - tt_7graces_gnisis_koal
     - tt_7graces_kummu
     - tt_7graces_gg
     - tt_cure_lette
@@ -484,7 +501,7 @@ tt_cure_lette:
   description: Cure Lette
   giver: lette
   prerequisites:
-    - tt_7graces_gnisis # again a handy cure spell
+    - tt_7graces_gnisis_ashmask # again a handy cure spell
 tt_mount_kand:
   description: Do the Mount Kand pilgrimage (Lead -> Sword -> Orc)
   giver: atronach_storm_ttmk
@@ -634,30 +651,44 @@ ic_master:
     - ic_iulus
     - training_ernse # Blunt 90 by this point to become Primate
 
-il_darius_1:
-  description: Join IL, do first Darius quests (murder + eggmine cure, have to return to the eggmine twice)
+il_darius_1_get:
+  description: Join IL, get Land Deed
+  giver: general darius
+il_darius_1_do:
+  description: Kill Lugrub and get his axe as proof, cure the Queen
+  giver: lugrub gro-ogdum
+  prerequisites:
+    - il_darius_1_get
+il_darius_1_end_2_get:
+  description: Get the Kwama Queen Cure quest
   giver: general darius
   prerequisites:
-    - tt_7graces_gnisis # get the spell to cure the Queen
+    - il_darius_1_do
+il_darius_2_do:
+  description: Have to go back to the Eggmine to verify Queen has been cured
+  giver: lugrub gro-ogdum
+  prerequisites:
+    - il_darius_1_end_2_get
+    - tt_7graces_gnisis_ashmask # get the spell to cure the Queen
 il_madura_seran:
   description: Kill the Ashlanders and escort Madura Seran to Ald Velothi Outpost (+5 Temple/IL rep)
   giver: madura seran
-il_darius_2_get:
+il_darius_2_end_3_get:
   description: Get and hand in Madura Seran quest, get Taxman quest
   giver: general darius
   prerequisites:
-    - il_darius_1
+    - il_darius_2_do
     - il_madura_seran
-il_darius_2_do:
+il_darius_3_do:
   description: Free the taxman, get Raw Ebony from a nearby crate for a future TG quest
   giver: ragash gra-shuzgub
   prerequisites:
-    - il_darius_2_get
-il_darius_2_end:
+    - il_darius_2_end_3_get
+il_darius_3_end:
   description: Hand in Taxman, get and do the Talos Cult quests
   giver: general darius
   prerequisites:
-    - il_darius_2_do
+    - il_darius_3_do
 il_drinar_tube:
   description: Steal the Dwemer Tube from Drinar Varyon
   giver: drinar varyon
@@ -671,7 +702,7 @@ il_imsin_1:
   description: Get and report Drinar quest, then get and report Joncis, get and report Maiden's Token
   giver: imsin the dreamer
   prerequisites:
-    - il_darius_1 # need to have joined the Legion, can only do through Darius
+    - il_darius_1_get # need to have joined the Legion, can only do through Darius
     - il_drinar_tube
     - il_joncis_dalomax
     - il_kill_varona_nelas
@@ -679,7 +710,7 @@ il_radd_1_get:
   description: Get and hand in Dwemer Metal (got either in Ald-Ruhn or from Nalcarya), Get Jocien rescue quest
   giver: radd hard-heart
   prerequisites:
-    - il_darius_1
+    - il_darius_1_get
 il_radd_1_do:
   description: Kill Mabrigash holding Jocien hostage, free him
   giver: jocien ancois
@@ -702,7 +733,7 @@ il_frald_1_get:
   description: Get the Courtesy quest
   giver: Frald the White
   prerequisites:
-    - il_darius_1
+    - il_darius_1_get
 il_frald_1_do:
   description: Speak with Salyn for a riddle duel (need Int 50)
   giver: salyn sarethi
@@ -719,17 +750,23 @@ il_lord_mail:
 il_chrysamere:
   description: Kill Draramu, get Chrysamere
   giver: draramu hloran
-il_master:
-  description: Get promoted to Knight Protector, get and hand in Lord's Mail/Chrysamere, challenge Vatinius to a duel and kill him.
+il_master_duel:
+  description: Get promoted to Knight Protector, get and hand in Lord's Mail/Chrysamere, challenge Vatinius to a duel
   giver: Varus Vatinius
   prerequisites:
-    - il_darius_2_end
+    - il_darius_3_end
     - il_imsin_1
     - il_radd_2
     - il_frald_1_end
     - il_lord_mail
     - il_chrysamere
     - training_eydis # Blunt 70 to challenge for a duel
+il_master:
+  description: Kill Vatinius in the Arena
+  giver: tanusea veloth # she's in the Arena Pit, can't use Vatinius because he gets teleported there
+  prerequisites:
+    - il_master_duel
+
 
 hh_nileno_1_get:
   description: Join Hlaalu, get Neminda's Orders
@@ -784,21 +821,15 @@ hh_nileno_5_do:
   giver: bivale teneran
   prerequisites:
     - hh_nileno_5_get
-hh_nileno_6_get:
-  description: Hand in Bivale, get Hlaalo murder
+hh_thanelen:
+  description: Taunt and kill Thanelen Velas (Hlaalo murderer)
+  giver: thanelen velas
+hh_nileno_6:
+  description: Hand in Bivale, get and hand in Hlaalo murder
   giver: nileno dorvayn
   prerequisites:
     - hh_nileno_5_do
-hh_nileno_6_do:
-  description: Taunt and kill Thanelen Velas (Hlaalo murderer)
-  giver: thanelen velas
-  prerequisites:
-    - hh_nileno_6_get
-hh_nileno_6_end:
-  description: Hand in Hlaalo murder
-  giver: nileno dorvayn
-  prerequisites:
-    - hh_nileno_6_do
+    - hh_thanelen
 hh_crassius_1:
   description: Talk to Crassius, become Kinsman and start Helvi questline
   giver: crassius curio
@@ -820,15 +851,20 @@ hh_helvi_2_get:
   prerequisites:
     - hh_helvi_1_do
 hh_helvi_2_do:
-  description: Report documents to Curio, get a copy from Baren Alen in the Treasury
+  description: Report documents to Curio
   giver: crassius curio
   prerequisites:
     - hh_helvi_2_get
+hh_helvi_2_do_2:
+  description: Get a deed copy from Baren Alen in the Treasury
+  giver: baren alen
+  prerequisites:
+    - hh_helvi_2_do
 hh_helvi_3_get:
   description: Hand in Documents, get and pay rent/taxes, get Ebony Smuggling
   giver: odral helvi
   prerequisites:
-    - hh_helvi_2_do
+    - hh_helvi_2_do_2
 hh_helvi_3_do:
   description: Report ebony to Curio, get him to send you to Segunivus
   giver: crassius curio
@@ -847,7 +883,7 @@ hh_stronghold_1_get:
   description: Start Stronghold
   giver: dondos driler
   prerequisites:
-    - hh_nileno_6_get # about enough rep for Kinsman -- assuming we haven't yet done the FG quest that gives us +5 rep?
+    - hh_nileno_6 # about enough rep for Kinsman -- assuming we haven't yet done the FG quest that gives us +5 rep?
 hh_stronghold_1_do:
   description: Get Vedam to give permission to build stronghold
   giver: vedam dren
@@ -871,7 +907,7 @@ hh_crassius_2:
   prerequisites:
     - hh_helvi_3_do_report
     - hh_stronghold_2_do
-    - hh_nileno_6_end
+    - hh_nileno_6
     - training_missun # 70 (or more) Marksman, 25 Light Armor
     - training_falvel # 25 Personality
 
