@@ -355,12 +355,12 @@ nd = NearestNDInterpolator(xs, ys)
 
 overlay = np.array([[nd(i, j) for j in xrange(map_orig.size[1])] for i in xrange(map_orig.size[0])])
 
-plt.figure(figsize=(10, 15))
+plt.figure(figsize=(10, 10))
 plt.imshow(map_orig, alpha=0.8)
-CS = plt.contour(overlay.T, np.linspace(18, 26, 25), alpha=1, linewidths=2, cmap=plt.get_cmap('winter'))
+CS = plt.contour(overlay.T, np.linspace(20, 35, 16), alpha=1, linewidths=2, cmap=plt.get_cmap('winter'))
 plt.clabel(CS, inline=1, fontsize=10, fmt=lambda c: "%.2fs" % c)
 plt.gca().grid(False)
-plt.savefig("map_average_travel.png")
+plt.savefig("map_average_travel.png", dpi=200)
 
 
 

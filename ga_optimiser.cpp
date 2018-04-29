@@ -11,6 +11,7 @@ std::random_device rd;
 std::mt19937 eng(rd());
 
 bool validate_deps(const std::vector<int> &route, const std::vector<std::vector<int> > &deps) {
+	// Check that the dependency graph is satisfied: maintain a mask of nodes that we've visited
 	std::vector<bool> done(route.size());
 	
 	for (int i = 0; i < route.size(); i++) {
@@ -25,16 +26,16 @@ bool validate_deps(const std::vector<int> &route, const std::vector<std::vector<
 
 std::vector<int> mutate_route(std::vector<int> base, const std::vector<std::vector<int> > &deps, int start_hold_out, int no_mutations) {
 	int successful = 0;
-	
-	std::vector<int> old_base = base;
+	// Random generator for the old and new position of a random point in the route (we're leaving first start_hold_out items alone)
+	std::uniform_int_distribution<> rnd_size(start_hold_out, base.size() - 1);
 	while (successful < no_mutations) {
-		std::uniform_int_distribution<> rnd_size(start_hold_out, base.size() - 1);
-
+		std::vector<int> old_base = base;
 		int from = rnd_size(eng);
 	
 		int to = 0;
 		do to = rnd_size(eng); while (to == from);
-
+		
+		// Move (not swap!) the item at "from" up/down towards "to"
 		if (from < to) {
 			std::rotate(base.begin() + from, base.begin() + from + 1, base.begin() + to);
 		}
@@ -45,6 +46,7 @@ std::vector<int> mutate_route(std::vector<int> base, const std::vector<std::vect
 		if (validate_deps(base, deps)) {
 			successful++;
 		} else {
+			// If dependencies not satisfied, throw this attempt away
 			base = old_base;
 		}
 	}
