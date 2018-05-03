@@ -154,21 +154,27 @@ int main(int argc, char* argv[]) {
 	
 	std::cout << "Optimising..." << std::endl;
 	
+	double prev_best = 1e10;
+	
 	for (int i = 0; i < no_iterations; i++) {
-		std::sort(solution_pool.begin(), solution_pool.end(),
-			[&, dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node](std::vector<int> l, std::vector<int> r) {
-				return evaluate_route(l, dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node)
-				< evaluate_route(r, dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node);});
-		double best = evaluate_route(solution_pool[0], dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node);
-		std::cout << "Iteration " << i << "; best " << best << std::endl;
-		
 		std::vector<std::vector<int> > new_solution_pool;
 		for (int i = 0; i < pool_size / branching; i++) {
 			for (int j = 0; j < branching; j++) {
 				new_solution_pool.push_back(mutate_route(solution_pool[i], deps, start.size(), no_mutations));
 			}
 		}
-		solution_pool = new_solution_pool;
+
+		std::sort(new_solution_pool.begin(), new_solution_pool.end(),
+			[&, dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node](std::vector<int> l, std::vector<int> r) {
+				return evaluate_route(l, dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node)
+				< evaluate_route(r, dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node);});
+		double best = evaluate_route(solution_pool[0], dist, dist_nonrecall, recall_embargo_start_node, recall_embargo_end_node);
+		
+		if (best < prev_best) {
+			solution_pool = new_solution_pool;
+			prev_best = best;
+		}
+		std::cout << "Iteration " << i << "; best " << prev_best << std::endl;
 	}
 	
 	std::cout << "Optimisation done, exporting..." << std::endl;

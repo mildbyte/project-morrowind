@@ -58,21 +58,20 @@ del graph['ALL']
 del graph['START']
 validate(graph)
 
-inverted_graph = defaultdict(list)
-for node, items in graph.items():
-    for p in items.get('prerequisites', []):
-        inverted_graph[p].append(node)
+# inverted_graph = defaultdict(list)
+# for node, items in graph.items():
+#     for p in items.get('prerequisites', []):
+#         inverted_graph[p].append(node)
+#
+# test = linearize(graph, start)
+# pprint(test)
 
-test = linearize(graph, start)
-pprint(test)
-
-edges = [(p, n) for n in graph for p in graph[n].get('prerequisites', [])]
-
-
-G = pydot.graph_from_edges(edge_list=edges, directed=True)
-
-with open("quest_graph.png", 'wb') as f:
-    f.write(G.create_png(prog=['sfdp', '-Goverlap=false', '-Gsplines=true']))
+# edges = [(p, n) for n in graph for p in graph[n].get('prerequisites', [])]
+#
+# G = pydot.graph_from_edges(edge_list=edges, directed=True)
+#
+# with open("quest_graph.png", 'wb') as f:
+#     f.write(G.create_png(prog=['sfdp', '-Goverlap=false', '-Gsplines=true']))
 
 # Load stuff from the Enchanted Editor dump
 cells, npcs = load_cells_npcs("../Morrowind.esm.txt")
@@ -86,7 +85,7 @@ for n in all_node_ids:
         print("Failed to locate %s" % n)
 
 walking_speed = 750  # game units per real second assuming levitation + boots of blinding speed
-travel_time = 5  # roughly 10 seconds to travel with Silt Strider/Guild guide -- to account for dialogue clicking and loading time + nudge
+travel_time = 1  # roughly 10 seconds to travel with Silt Strider/Guild guide -- to account for dialogue clicking and loading time + nudge
 # the optimiser into not flailing all over the game map
 
 vertices, edges = construct_graph(npcs, cells, extra_locations=all_node_locations.values(), use_realtime_metrics=True, instant_travel_time=travel_time)
@@ -96,17 +95,14 @@ vertex_index = {v: i for i, v in enumerate(sorted_vertices)}
 
 # Add a Recall edge to e.g. a Mages Guild teleporter
 # Assuming it's easy for us to set up a Mark at one (e.g. during the initial stage or when the Silent Pilgrimage quest ends)
-def add_recall_edges(vertices, teleport_edges, mg_location):
+def add_recall_edges(vertices, teleport_edges, mg_location, travel_time=0.):
     new_edges = deepcopy(teleport_edges)
     for v in vertices:
-        new_edges[v][mg_location] = ('Recall', 0)
+        new_edges[v][mg_location] = ('Recall', travel_time)
     return new_edges
 
-recall_edges = add_recall_edges(vertices, edges, all_node_locations['ajira'])
+recall_edges = add_recall_edges(vertices, edges, all_node_locations['ajira'], travel_time=travel_time)
 no_recall_edges = edges
-
-# when we've placed the mark at the Sanctus Shrine, we can Recall there instead
-edges = add_recall_edges(vertices, edges, all_node_locations['llirala sendas'])
 
 # Farm Floyd-Warshall pathfinding out to a separate C++ program
 def export_fw_data(edges, fd):
@@ -118,9 +114,6 @@ def export_fw_data(edges, fd):
             fd.write('%f ' % (d if d is not None else INFINITY))
         fd.write('\n')
 
-
-with open("dist_norecall.txt", 'wb') as f:
-    export_fw_data(no_recall_edges, f)
 with open("dist.txt", 'wb') as f:
     export_fw_data(edges, f)
 with open("dist_recall.txt", 'wb') as f:
@@ -174,21 +167,21 @@ def make_node_distance_matrix(dist):
     return node_distances
 
 
-node_distances = make_node_distance_matrix(dist)
-node_distances_recall = make_node_distance_matrix(dist_recall)
+node_distances = make_node_distance_matrix(dist_recall)
 
-# plot a heatmap of travel times
-node_matrix = []
-for k, v in node_distances.iteritems():
-    node_matrix.append([v[i] for i in node_distances])
-import seaborn as sns
-
-ax = sns.clustermap(node_matrix, yticklabels=node_distances.keys(), xticklabels=node_distances.keys(), figsize=(15, 15))
-sns.set(font_scale=0.7)
-plt.setp(ax.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
-plt.setp(ax.ax_heatmap.xaxis.get_majorticklabels(), rotation=90)
-plt.savefig("travel_heatmap_cluster.png", dpi=200)
-plt.close()
+#
+# # plot a heatmap of travel times
+# node_matrix = []
+# for k, v in node_distances.iteritems():
+#     node_matrix.append([v[i] for i in node_distances])
+# import seaborn as sns
+#
+# ax = sns.clustermap(node_matrix, yticklabels=node_distances.keys(), xticklabels=node_distances.keys(), figsize=(15, 15))
+# sns.set(font_scale=0.7)
+# plt.setp(ax.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
+# plt.setp(ax.ax_heatmap.xaxis.get_majorticklabels(), rotation=90)
+# plt.savefig("travel_heatmap_cluster.png", dpi=200)
+# plt.close()
 
 
 # Export distances and graph constraints for the optimiser
@@ -209,25 +202,22 @@ def export_optimiser_constraints(graph, f):
         f.write('\n')
 
 
-with open("dist_graph_norecall.txt", 'w') as f:
-    export_optimiser_dists(node_distances, graph, f)
 with open("dist_graph_recall.txt", 'w') as f:
-    export_optimiser_dists(node_distances_recall, graph, f)
+    export_optimiser_dists(node_distances, graph, f)
 with open("dep_graph.txt", 'w') as f:
     export_optimiser_constraints(graph, f)
 
 
 
 all_nodes = sorted(graph.keys())
-# Optimiser takes the quest graph nodes between which the alternative travel distances are used (in this case,
-# from when we've placed a mark at the Sanctus Shrine to when we actually do the silent pilgrimage) as well as
-# a list of nodes that have to come at the beginning of the route
-args = [all_nodes.index('tt_set_sanctus_mark'), all_nodes.index('tt_endryn_1_end'), all_nodes.index('mg_ajira_1'), all_nodes.index('mg_edwinna_1')]
+# We skip the Sanctus Shrine quest now so the optimiser can use the same graph all the time
+args = [0, 0, all_nodes.index('mg_ajira_1'), all_nodes.index('mg_edwinna_1')]
+print(args)
 
-subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_recall.txt", "dist_graph_norecall.txt",
-                       1000,  # pool size
+subprocess.check_call(["./ga_optimiser.exe", "dep_graph.txt", "dist_graph_recall.txt", "dist_graph_recall.txt",
+                       10000,  # pool size
                        200,  # number of iterations
-                       50,  # branching factor
+                       500,  # branching factor
                        5, ]  # number of random swaps to generate a new route
                       + args)
 
@@ -247,7 +237,7 @@ with open("optimiser_result.txt", 'r') as f:
 def evaluate_route(route):
     return sum(node_distances[graph[r1]['giver'].lower()][graph[r2]['giver'].lower()] for r1, r2 in zip(route, route[1:]))
 
-best = min(pool, key=evaluate_route)
+best = pool[0] # pool already exported pre-sorted
 
 
 def route_valid(route, start):
@@ -268,8 +258,11 @@ def get_node_distance(n1, n2):
 
 def get_best_mark_position(route):
     return min(
+        # can't use the mark until we've placed it
         (sum(get_node_distance(r1, r2) for r1, r2 in zip(route[:i], route[1:i]))
          + sum(
+            # after placing the mark, we have a choice of recalling to it and going to the next node
+            # or going to the next node directly
             min(get_node_distance(r, r2), get_node_distance(r1, r2)) for r1, r2 in zip(route[i:], route[i + 1:])),
          i, r) for i, r in enumerate(route)
     )
@@ -321,7 +314,7 @@ def export_route(route, edges, alternative_edges, alternative_edges_start, alter
     for row in output:
         writer.writerow(row)
 
-with open("route_1mark.csv", 'wb') as f:
+with open("route_1mark_v4.csv", 'wb') as f:
     export_route(best, recall_edges, edges, 'tt_set_sanctus_mark', 'tt_endryn_1_end', prev_recall, prev, f)
 
 

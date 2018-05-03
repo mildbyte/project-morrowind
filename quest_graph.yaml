@@ -242,12 +242,10 @@ fg_kill_lorbumol_and_sjoring:
   prerequisites:
     - fg_lorbumol_2_end # can't kill before finishing his required quests
 fg_master:
-  description: Get and pass the final two quests with Persius
+  description: Hand in the Flin quest, Report Sjoring/Lorbumol dead, become FG master
   giver: persius mercius
   prerequisites:
-    # need to make sure we've done the bitter cup quest so we don't need to kill Eydis
     - fg_persius_4_do
-    - tg_jim_3_end_4_get # secure Eydis' support
     - fg_kill_lorbumol_and_sjoring
 
 # Thieves' guild up to Bragor freeing
@@ -260,12 +258,10 @@ tg_habasi_1:
     - tg_hlaalo_brandy
     - tg_razhid_artifacts # most action is in balmora -- this one requires to travel to hla oad
 tg_razhid_artifacts:
-  description: Steal Dwemer artifacts from Ra'Zhid
+  description: Steal Dwemer artifacts from Ra'Zhid (kill the 2 people in there instead of stealthing up)
   giver: ra'zhid
-  prerequisites:
-    - misc_amulet_of_shadows # all people located in a single room, tough without stealth
 tg_nerano_key:
-  description: Taunt and kill Sovor Trandel to get Nerano Manor Key
+  description: Frenzy and kill Sovor Trandel to get Nerano Manor Key
   giver: sovor trandel
 tg_hlaalo_brandy:
   description: Get Brandy from near Ralen Hlaalo's body
@@ -391,126 +387,27 @@ tg_master:
     - fg_master
     - tg_jim_4_end
 
-tt_join:
-  description: Join the Temple
-  giver: feldrelo sadri
+# Temple is now broken: we can get the Four Corners quest from Saryoni (as well as do Seven Graces) without being
+# a member; get Ebony Mail from Assarnibibi as soon as we've done Ald Daedroth and continuously
+# ask Tholer for 'duties' (after Seven Graces is done) to raise our rank ad infinitum until we reach Patriarch.
 tt_7graces_vivec:
   description: Do the Vivec pilgrimages (Floating Moon, Drowning, give Vivec 100 drakes)
   giver: vivec_god # roughly the location for the 3 shrines
-  prerequisites:
-    - tt_join
 tt_7graces_gnisis_ashmask:
   description: Do Ash Mask (buy potion from the Temple)). Get Vivec's Touch spell
   giver: misc_vivec_ashmask_01
-  prerequisites:
-    - tt_join
 tt_7graces_gnisis_koal:
   description: Do Koal Cave (Dreugh Wax taken from Caldera where we stole the alchemy set)
   giver: ac_shrine_koalcave
-  prerequisites:
-    - tt_join
 tt_7graces_kummu:
   description: Collect Muck from a small island south, do Kummu pilgrimage
   giver: alof the easterner # closest NPC to the shrine, Muck collected SW
-  prerequisites:
-    - tt_join
 tt_7graces_gg:
   description: Do Ghostgate pilgrimage (sacrifice one of the soulgems we stole from Galbedir)
   giver: uvoo llaren # inside GG but the actual shrine is north
-  prerequisites:
-    - tt_join
-tt_cure_orc:
-  description: Cure the Orc in the shrine with Vivec's Touch spell
-  giver: bulfim_gra_shugarz
-  prerequisites:
-    - tt_7graces_gnisis_ashmask # not required but gives Vivec's Touch spell
-tt_tuls_1_get:
-  description: Get and hand in Compassion (make sure to keep the Cure Blight potion for extra Temple rep), get False Incarnate quest
-  giver: tuls valen
-  prerequisites:
-    - tt_7graces_vivec
-    - tt_7graces_gnisis_ashmask
-    - tt_7graces_gnisis_koal
-    - tt_7graces_kummu
-    - tt_7graces_gg
-    - tt_cure_orc
-tt_tuls_1_do:
-  description: Convince the False Incarnate to stop
-  giver: elvil vidron
-  prerequisites:
-    - tt_tuls_1_get
-tt_tuls_1_end_2_get:
-  description: Get Maar Gan Pilgrimage quest
-  giver: tuls valen
-  prerequisites:
-    - tt_tuls_1_do
-tt_tuls_2_do:
-  description: Taunt the Dremora and then pray at the rock
-  giver: dremora_ttmg
-  prerequisites:
-    - tt_tuls_1_end_2_get
-tt_tuls_2_end:
-  description: Hand in the Maar Gan Pilgrimage quest
-  giver: tuls valen
-  prerequisites:
-    - tt_tuls_2_do
-tt_endryn_1_get:
-  description: Get Tanusea Veloth quest
-  giver: endryn llethan
-  prerequisites:
-    - tt_7graces_vivec
-    - tt_7graces_gnisis_ashmask
-    - tt_7graces_gnisis_koal
-    - tt_7graces_kummu
-    - tt_7graces_gg
-tt_endryn_1_do:
-  description: Convince to leave town
-  giver: tanusea veloth
-  prerequisites:
-    - tt_endryn_1_get
-tt_set_sanctus_mark:
-  description: Set a Mark at the Sanctus Shrine
-  giver: llirala sendas
-tt_endryn_1_end:
-  description: Hand in Tanusea Veloth, get and do Silent Pilgrimage, go back, get promoted to Curate, hand in Shoes of Rilms, hand in Delyn cleanup
-  giver: endryn llethan
-  prerequisites:
-    - tt_endryn_1_do
-    - tt_set_sanctus_mark
-    - tt_clear_ald_sotha
-    - misc_olms_delyn
-    - training_eydis # need Curate (50 blunt) to hand in Rilms/Cult cleanup
-tt_clear_ald_sotha:
-  description: Kill Severa Magia and Llandrale Varam (future MT quest), get Sanguine items and Shoes of Rilms
+mt_clear_ald_sotha:
+  description: Kill Severa Magia and Llandrale Varam (future MT quest), get Sanguine items
   giver: llandrale varam
-tt_tharer_1:
-  description: Get and hand in all Tharer Rotheloth quests
-  giver: tharer rotheloth
-  prerequisites:
-    - tt_7graces_vivec
-    - tt_7graces_gnisis_ashmask
-    - tt_7graces_gnisis_koal
-    - tt_7graces_kummu
-    - tt_7graces_gg
-    - tt_cure_lette
-    - tt_mount_kand
-    - tt_mawia
-    - tt_kill_raxle_berne
-    - training_eydis # Curate (50 blunt) to hand in Galom Daeus quest
-tt_cure_lette:
-  description: Cure Lette
-  giver: lette
-  prerequisites:
-    - tt_7graces_gnisis_ashmask # again a handy cure spell
-tt_mount_kand:
-  description: Do the Mount Kand pilgrimage (Lead -> Sword -> Orc)
-  giver: atronach_storm_ttmk
-tt_mawia:
-  description: Kill Delvam Andarys in Mawia
-  giver: delvam andarys
-tt_kill_raxle_berne:
-  description: Kill Raxle Berne
-  giver: raxle berne
 tt_saryoni_fourcorners_1:
   description: Break into Tholer's quarters, talk to him about bad daedra and then Four Corners, start First Corner
   giver: tholer saryoni
@@ -555,19 +452,16 @@ tt_assarnibibi:
   prerequisites:
     - tt_saryoni_fourcorners_4_do
 tt_master:
-  description: Get promoted to Diviner, get and hand in the Four Corners and Ebony Mail quests, become Patriarch
+  description: Talk to Saryoni and continuously ask for duties to get promoted to Patriarch
   giver: tholer saryoni
   prerequisites:
-    - tt_tharer_1
-    - tt_endryn_1_end
-    - tt_tuls_2_end
     - tt_assarnibibi
-    - il_madura_seran
-    - training_ernse
+    - tt_7graces_vivec
+    - tt_7graces_gnisis_ashmask
+    - tt_7graces_gnisis_koal
+    - tt_7graces_kummu
+    - tt_7graces_gg
 
-mt_kill_toris_saren:
-  description: Taunt and kill Toris Saren (MT first contract)
-  giver: toris saren
 mt_kill_feruren_oran:
   description: Taunt and kill Feruren Oran (MT initiation)
   giver: feruren oran
@@ -583,29 +477,21 @@ mt_ashalmimilkala:
 mt_yasammidan:
   description: Kill Anel Rethelas + Mindeli Saren for a total of 2 Sanguine items
   giver: anel rethelas
-mt_join_and_advance:
-  description: Join MT and keep handing in quests until Miun Gei
+mt_tsrazami:
+  description: Frenzy and kill Tsrazami
+  giver: tsrazami
+mt_master:
+  description: Join MT, hand in all Sanguine items and quests
   giver: eno hlaalu
   prerequisites:
     - mt_kill_feruren_oran
-    - mt_kill_toris_saren
-    - tt_clear_ald_sotha # Severa Magia + 6 Sanguine items for 30 rep
+    - mt_tsrazami # should have talked to her but still get rep and advance the questline by reporting that she's dead
     - misc_olms_delyn # Durus Marius + 4 Sanguine items for 20 rep
     - mt_pelagiad_belt # 1 Sanguine item
     - mt_movis_darys # 1 Sanguine item
     - mt_ashalmimilkala # 1 Sanguine item
     - mt_yasammidan # 2 Sanguine items
-    # by this point 15 Sanguine items yield 75 rep, further quests give 30 more (up to Severa Magia)
-mt_eno_1:
-  description: Convince Tsrazami to talk to Eno
-  giver: tsrazami
-  prerequisites:
-    - mt_join_and_advance
-mt_master:
-  description: Hand in Tsrazami, get and instapass remaining MT quests
-  giver: eno hlaalu
-  prerequisites:
-    - mt_eno_1
+    - mt_clear_ald_sotha # Severa Magia + 6 Sanguine items for 30 rep
     - training_missun # need to have 80 Marksman etc since we're becoming Grandmaster here
 
 ic_acquire_shirt:
@@ -699,7 +585,7 @@ il_kill_varona_nelas:
   description: Kill Varona Nelas, get Ilmeni's Glove
   giver: varona nelas
 il_imsin_1:
-  description: Get and report Drinar quest, then get and report Joncis, get and report Maiden's Token
+  description: Get and report Drinar quest (make sure not to report Joncis if done!), then get and report Joncis, get and report Maiden's Token
   giver: imsin the dreamer
   prerequisites:
     - il_darius_1_get # need to have joined the Legion, can only do through Darius
@@ -776,65 +662,59 @@ hh_nileno_1_do:
   giver: neminda
   prerequisites:
     - hh_nileno_1_get
-hh_nileno_2_get:
-  description: Get Aurane's Recipes
-  giver: nileno dorvayn
-  prerequisites:
-   - hh_nileno_1_do
-hh_nileno_2_do:
+hh_aurane_recipes:
   description: Steal Aurane's Recipes
   giver: aurane frernis
-  prerequisites:
-    - hh_nileno_2_get
-hh_nileno_3_get:
-  description: Hand in Aurane's Recipes, get Inanius Queen
+hh_nileno_1_end_2_get:
+  description: Hand in Neminda's Orders and Aurane's Recipes, get Inanius Queen
   giver: nileno dorvayn
   prerequisites:
-    - hh_nileno_2_do
-hh_nileno_3_do:
+    - hh_nileno_1_do
+    - hh_aurane_recipes
+hh_nileno_2_do:
   description: Blackmail Avon into giving you money not to kill Inanius Queen
   giver: avon oran
   prerequisites:
-    - hh_nileno_3_get
-hh_nileno_3_do_kill:
+    - hh_nileno_1_end_2_get
+hh_nileno_2_do_kill:
   description: Kill the queen anyway for extra rep
   giver: Kwama Queen_HHEM
   prerequisites:
-    - hh_nileno_3_do
-hh_nileno_4_get:
+    - hh_nileno_2_do
+hh_nileno_3_get:
   description: Hand in Inanius, get Guar Skins
   giver: nileno dorvayn
   prerequisites:
-    - hh_nileno_3_do_kill
-hh_nileno_4_do:
+    - hh_nileno_2_do_kill
+hh_nileno_3_do:
   description: Convince Rolasa to buy skins from Hlaalu
   giver: rolasa oren
   prerequisites:
-    - hh_nileno_4_get
-hh_nileno_5_get:
+    - hh_nileno_3_get
+hh_nileno_4_get:
   description: Hand in Guar Skins, get Bivale Orders quest
   giver: nileno dorvayn
   prerequisites:
-    - hh_nileno_4_do
-hh_nileno_5_do:
+    - hh_nileno_3_do
+hh_nileno_4_do:
   description: Do Bivale's Orders quest
   giver: bivale teneran
   prerequisites:
-    - hh_nileno_5_get
+    - hh_nileno_4_get
 hh_thanelen:
   description: Taunt and kill Thanelen Velas (Hlaalo murderer)
   giver: thanelen velas
-hh_nileno_6:
+hh_nileno_5:
   description: Hand in Bivale, get and hand in Hlaalo murder
   giver: nileno dorvayn
   prerequisites:
-    - hh_nileno_5_do
+    - hh_nileno_4_do
     - hh_thanelen
 hh_crassius_1:
   description: Talk to Crassius, become Kinsman and start Helvi questline
   giver: crassius curio
   prerequisites:
-    - hh_nileno_4_get # become Lawman after finishing Inanius
+    - hh_nileno_3_get # become Lawman after finishing Inanius
 hh_helvi_1_get:
   description: Get Sealed Orders
   giver: odral helvi
@@ -883,14 +763,14 @@ hh_stronghold_1_get:
   description: Start Stronghold
   giver: dondos driler
   prerequisites:
-    - hh_nileno_6 # about enough rep for Kinsman -- assuming we haven't yet done the FG quest that gives us +5 rep?
+    - hh_nileno_5 # about enough rep for Kinsman -- assuming we haven't yet done the FG quest that gives us +5 rep?
 hh_stronghold_1_do:
   description: Get Vedam to give permission to build stronghold
   giver: vedam dren
   prerequisites:
     - hh_stronghold_1_get
 hh_stronghold_2_get:
-  description: Start stronghold construction and wait about 5 days
+  description: Start stronghold construction and wait about 5 days, talk to Dondos again
   giver: dondos driler
   prerequisites:
     - hh_stronghold_1_do
@@ -907,7 +787,7 @@ hh_crassius_2:
   prerequisites:
     - hh_helvi_3_do_report
     - hh_stronghold_2_do
-    - hh_nileno_6
+    - hh_nileno_5
     - training_missun # 70 (or more) Marksman, 25 Light Armor
     - training_falvel # 25 Personality
 
