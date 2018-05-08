@@ -171,12 +171,12 @@ def construct_graph(npcs, cells, extra_locations=[], use_realtime_metrics=False,
     vertices = vertices.union(divine_marker_locations).union(temple_marker_locations)
     for v in vertices:
         try:
-            teleport_edges[v][get_closest_from(divine_marker_locations, v)] = ('Divine Intervention', 0.)
+            teleport_edges[v][get_closest_from(divine_marker_locations, v)] = ('Divine Intervention', instant_travel_time)
         except AssertionError:
             pass
         
         try:
-            teleport_edges[v][get_closest_from(temple_marker_locations, v)] = ('Almsivi Intervention', 0.)
+            teleport_edges[v][get_closest_from(temple_marker_locations, v)] = ('Almsivi Intervention', instant_travel_time)
         except AssertionError:
             pass
     

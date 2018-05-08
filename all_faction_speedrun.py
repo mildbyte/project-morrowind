@@ -85,7 +85,7 @@ for n in all_node_ids:
         print("Failed to locate %s" % n)
 
 walking_speed = 750  # game units per real second assuming levitation + boots of blinding speed
-travel_time = 1  # roughly 10 seconds to travel with Silt Strider/Guild guide -- to account for dialogue clicking and loading time + nudge
+travel_time = 0  # roughly 10 seconds to travel with Silt Strider/Guild guide -- to account for dialogue clicking and loading time + nudge
 # the optimiser into not flailing all over the game map
 
 vertices, edges = construct_graph(npcs, cells, extra_locations=all_node_locations.values(), use_realtime_metrics=True, instant_travel_time=travel_time)
@@ -114,8 +114,8 @@ def export_fw_data(edges, fd):
             fd.write('%f ' % (d if d is not None else INFINITY))
         fd.write('\n')
 
-with open("dist.txt", 'wb') as f:
-    export_fw_data(edges, f)
+# with open("dist.txt", 'wb') as f:
+#     export_fw_data(edges, f)
 with open("dist_recall.txt", 'wb') as f:
     export_fw_data(recall_edges, f)
 
@@ -134,14 +134,9 @@ def floyd_warshall_path(v1, v2, prev):
     return result
 
 
-# Do the pathfinding with the two Mark points at the same time
-fw_dist = subprocess.Popen(["./floyd_warshall.exe", "dist.txt", "dist_res.txt", "prev_res.txt"])
+# Do the pathfinding
 fw_dist_recall = subprocess.Popen(["./floyd_warshall.exe", "dist_recall.txt", "dist_recall_res.txt", "prev_recall_res.txt"])
-fw_dist.wait()
 fw_dist_recall.wait()
-
-dist = np.loadtxt('dist_res.txt')
-prev = np.loadtxt('prev_res.txt', dtype=int)
 
 dist_recall = np.loadtxt('dist_recall_res.txt')
 prev_recall = np.loadtxt('prev_recall_res.txt', dtype=int)
@@ -247,13 +242,41 @@ def route_valid(route, start):
     for r in route:
         for p in graph[r].get('prerequisites', []):
             if p not in completed:
+                print ("Route not valid: %s requires %s" % (r, p))
                 return False
         completed.add(r)
     return True
 
-
 def get_node_distance(n1, n2):
     return node_distances[graph[n1]['giver'].lower()][graph[n2]['giver'].lower()]
+
+def score_route(route):
+    return sum(get_node_distance(n1, n2) for n1, n2 in zip(route, route[1:]))
+
+all_nodes = sorted(graph.keys())
+with open("initial_route.txt", 'wb') as f:
+    f.write(' '.join(str(all_nodes.index(n)) for n in best) + '\n')
+
+def split_route(route, segments=12):
+    # splits route into equally-sized segments
+    route_len = score_route(route)
+    segment_size = route_len / segments
+
+    result_segments = []
+
+    current_segment_size = 0.
+    current_segment = [route[0]]
+    for r in route[1:]:
+        current_segment.append(r)
+        current_segment_size += get_node_distance(current_segment[-1], current_segment[-2])
+        if current_segment_size > segment_size:
+            result_segments.append(current_segment)
+            current_segment_size = 0
+            current_segment = [current_segment[-1]]
+
+    result_segments.append(current_segment)
+    return result_segments
+
 
 
 def get_best_mark_position(route):
@@ -314,8 +337,8 @@ def export_route(route, edges, alternative_edges, alternative_edges_start, alter
     for row in output:
         writer.writerow(row)
 
-with open("route_1mark_v4.csv", 'wb') as f:
-    export_route(best, recall_edges, edges, 'tt_set_sanctus_mark', 'tt_endryn_1_end', prev_recall, prev, f)
+with open("route_1mark_v11.csv", 'wb') as f:
+    export_route(best, recall_edges, recall_edges, 'mg_ajira_1', 'mg_edwinna_1', prev_recall, prev_recall, f)
 
 
 # Draw the average time it takes to travel from any vertex on the travel graph to any questgiver
@@ -418,7 +441,7 @@ def draw_route(route, edges, alternative_edges, alternative_edges_start, alterna
         drawer.line([c0, c1], fill=col, width=2)
     map_orig.save(output_path)
 
-draw_route(best, recall_edges, edges, 'tt_set_sanctus_mark', 'tt_endryn_1_end', prev_recall, prev, "final_route_map.png")
+draw_route(best, recall_edges, edges, 'mg_ajira_1', 'mg_edwinna_1', prev_recall, prev, "final_route_map.png")
 
 
 # Test how the route improves if we have all Propylon indices

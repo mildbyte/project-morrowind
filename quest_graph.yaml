@@ -77,6 +77,7 @@ mg_edwinna_2:
     - mg_edwinna_nchuleftingth
     - mg_edwinna_scarab_plans
     - mg_edwinna_airship_plans
+    - tg_aengoth_2 # need to have finished MG Looting and the optimiser wants us to start it really early
 mg_edwinna_nchuleftingth:
   description: Investigate the archaeologist's body
   giver: anes vendu
@@ -344,7 +345,7 @@ tg_jim_1:
     - misc_olms_delyn
     - training_missun # should be Marksman 80, Light Armor 30, Sneak 30
 misc_olms_delyn:
-  description: Clear out the two shrines in Olms/Delyn canalworks and get key from Nads' body (Delyn South-Two)
+  description: Clear out the shrine in Olms canalworks (Durus Marius/Dunmer with Daedric sword) and get key from Nads' body (Delyn South-Two)
   giver: durus marius
 tg_jim_2_get:
   description: Get Speak to Persius quest
@@ -665,6 +666,8 @@ hh_nileno_1_do:
 hh_aurane_recipes:
   description: Steal Aurane's Recipes
   giver: aurane frernis
+  prerequisites:
+    - misc_amulet_of_shadows # can't kill her so have to sneak
 hh_nileno_1_end_2_get:
   description: Hand in Neminda's Orders and Aurane's Recipes, get Inanius Queen
   giver: nileno dorvayn
@@ -746,15 +749,10 @@ hh_helvi_3_get:
   prerequisites:
     - hh_helvi_2_do_2
 hh_helvi_3_do:
-  description: Report ebony to Curio, get him to send you to Segunivus
-  giver: crassius curio
-  prerequisites:
-    - hh_helvi_3_get
-hh_helvi_3_do_report:
-  description: Report Helvi to Segunivus
+  description: Report Helvi to Segunivus (no need to go to Curio first)
   giver: segunivus mantedius
   prerequisites:
-    - hh_helvi_3_do
+    - hh_helvi_3_get
 
 hh_stronghold_deed:
   description: Buy deed from Baren
@@ -785,7 +783,7 @@ hh_crassius_2:
   description: Report Helvi being reported, report stronghold first phase done, get promoted to House Father
   giver: crassius curio
   prerequisites:
-    - hh_helvi_3_do_report
+    - hh_helvi_3_do
     - hh_stronghold_2_do
     - hh_nileno_5
     - training_missun # 70 (or more) Marksman, 25 Light Armor
