@@ -27,7 +27,7 @@ npc_ids = [n.name for n in npcs]
 npc_locations = {n.name : Location(n.position, cell=c) for c in cells for n in c.references if n.name in npc_ids}
 
 aryon = npc_locations['aryon']
-vertices, edges = construct_graph(npcs, cells, aryon)
+vertices, edges = construct_graph(npcs, cells, [aryon])
 
 
 # Calculate the best travel paths from Aryon's location to all locations
