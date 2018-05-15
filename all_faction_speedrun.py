@@ -74,7 +74,7 @@ validate(graph)
 #     f.write(G.create_png(prog=['sfdp', '-Goverlap=false', '-Gsplines=true']))
 
 # Load stuff from the Enchanted Editor dump
-cells, npcs = load_cells_npcs("../Morrowind.esm.txt")
+cells, npcs = load_cells_npcs("./Morrowind.esm.txt")
 
 all_node_ids = set([i['giver'].lower() for i in graph.values()])
 all_node_locations = {n.name.lower(): Location(n.position, cell=c) for c in cells for n in c.references if n.name.lower() in all_node_ids}

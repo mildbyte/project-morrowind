@@ -21,7 +21,7 @@ MAP_PATH = "map_small.jpg"
 
 
 # Load stuff from the Enchanted Editor dump
-cells, npcs = load_cells_npcs("../Morrowind.esm.txt")
+cells, npcs = load_cells_npcs("./Morrowind.esm.txt")
 
 npc_ids = [n.name for n in npcs]
 npc_locations = {n.name : Location(n.position, cell=c) for c in cells for n in c.references if n.name in npc_ids}
