@@ -8,5 +8,6 @@ dependencies:
 - scipy
 - ipython
 - seaborn
+- pil
 - pip:
   - pydot

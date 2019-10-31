@@ -31,7 +31,7 @@ def get_overlay_for(npcs, npc_locations, size):
             continue
         
         x, y = to_map(coord[0], coord[1])
-        overlay[x, y] += 1
+        overlay[int(round(x)), int(round(y))] += 1
     
     return overlay
 
